@@ -37,13 +37,17 @@ const LoginPage = () => {
       if (data?.error) {
         toast.error(data.error);
       } else {
-        toast.success("Login successful!");
+        if (data?.success) {
+          toast.success("Confirmation Email Sent!");
+        } else {
+          toast.success("Logged in successfully!");
+          form.reset();
+        }
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
-      form.reset();
     }
   }
 

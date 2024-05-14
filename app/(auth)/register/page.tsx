@@ -40,14 +40,14 @@ const RegisterPage = () => {
       if (data.error) {
         toast.error(data.error);
       } else {
-        toast.success("Registration Successful!");
+        toast.success("Confirmation Email Sent!");
+        form.reset();
+        router.push("/login");
       }
-      router.push("/login");
     } catch (error) {
       toast.error("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
-      form.reset();
     }
   }
 
