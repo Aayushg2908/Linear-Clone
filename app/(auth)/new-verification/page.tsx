@@ -4,8 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BeatLoader } from "react-spinners";
 import { useCallback, useEffect } from "react";
 import { newVerification } from "@/actions/auth";
-import { toast } from "react-hot-toast";
-import { CardWrapper } from "../_components/CardWrapper";
+import { CardWrapper } from "../card-wrapper";
+import { toast } from "sonner";
 
 const NewVerificationPage = () => {
   const searchParams = useSearchParams();

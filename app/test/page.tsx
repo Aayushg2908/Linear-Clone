@@ -11,7 +11,7 @@ const TestPage = async () => {
         action={async () => {
           "use server";
 
-          await signOut();
+          await signOut({ redirectTo: "/sign-in" });
         }}
       >
         <Button type="submit">Sign Out</Button>

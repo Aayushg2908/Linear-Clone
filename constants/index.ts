@@ -1,5 +1,5 @@
-export const publicRoutes = ["/"];
+export const publicRoutes = ["/", "/new-verification"];
 
-export const authRoutes = ["/login", "/register"];
+export const authRoutes = ["/sign-in", "/sign-up"];
 
 export const DEFAULT_REDIRECT = "/test";

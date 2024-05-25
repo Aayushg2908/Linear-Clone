@@ -14,35 +14,35 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { CardWrapper } from "../_components/CardWrapper";
-import { LoginSchema } from "@/lib/schema";
-import toast from "react-hot-toast";
-import { login } from "@/actions/auth";
+import { CardWrapper } from "../card-wrapper";
+import { RegisterSchema } from "@/lib/schema";
+import { register } from "@/actions/auth";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-const LoginPage = () => {
+const SignUpPage = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const form = useForm<z.infer<typeof LoginSchema>>({
-    resolver: zodResolver(LoginSchema),
+  const form = useForm<z.infer<typeof RegisterSchema>>({
+    resolver: zodResolver(RegisterSchema),
     defaultValues: {
       email: "",
       password: "",
+      name: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof LoginSchema>) {
+  async function onSubmit(values: z.infer<typeof RegisterSchema>) {
     setIsLoading(true);
     try {
-      const data = await login(values);
-      if (data?.error) {
+      const data = await register(values);
+      if (data.error) {
         toast.error(data.error);
       } else {
-        if (data?.success) {
-          toast.success("Confirmation Email Sent!");
-        } else {
-          toast.success("Logged in successfully!");
-          form.reset();
-        }
+        toast.success("Confirmation Email Sent!");
+        form.reset();
+        router.push("/sign-in");
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
@@ -53,14 +53,31 @@ const LoginPage = () => {
 
   return (
     <CardWrapper
-      headerLabel="Welcome back"
-      backButtonLabel="Don't have an account?"
-      backButtonHref="/register"
+      headerLabel="Create an account"
+      backButtonLabel="Already have an account?"
+      backButtonHref="/sign-in"
       showSocial
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={isLoading}
+                      placeholder="John Doe"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"
@@ -99,7 +116,7 @@ const LoginPage = () => {
             />
           </div>
           <Button disabled={isLoading} type="submit" className="w-full">
-            Login
+            Create an account
           </Button>
         </form>
       </Form>
@@ -107,4 +124,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default SignUpPage;
