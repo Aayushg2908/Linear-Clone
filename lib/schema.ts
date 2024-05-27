@@ -20,3 +20,9 @@ export const RegisterSchema = z.object({
     message: "Name is required",
   }),
 });
+
+export const WorkspaceSchema = z.object({
+  name: z.string().min(5, {
+    message: "Minimum 5 characters required",
+  }),
+});

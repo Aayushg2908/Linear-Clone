@@ -34,17 +34,33 @@ model User {
   image         String?
   password      String?
 
-  accounts Account[]
+  accounts         Account[]
+  workspaces       Workspace[] @relation("workspaceOwner")
+  joinedWorkspaces Workspace[] @relation("workspaceMember")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
-  id      String @id @default(cuid())
+  id      String   @id @default(cuid())
   email   String
-  token   String @unique
+  token   String   @unique
   expires DateTime
 
   @@unique([email, token])
+}
+
+model Workspace {
+  id         String @id @default(cuid())
+  name       String
+  inviteCode String @unique @default(cuid())
+
+  ownerId String
+  owner   User   @relation("workspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members User[] @relation("workspaceMember")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
