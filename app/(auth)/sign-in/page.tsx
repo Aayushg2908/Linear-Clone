@@ -101,7 +101,12 @@ const SignInPage = () => {
               )}
             />
           </div>
-          <Button disabled={isLoading} type="submit" className="w-full">
+          <Button
+            variant="linear"
+            disabled={isLoading}
+            type="submit"
+            className="w-full"
+          >
             Login
           </Button>
         </form>
