@@ -37,6 +37,8 @@ model User {
   accounts         Account[]
   workspaces       Workspace[] @relation("workspaceOwner")
   joinedWorkspaces Workspace[] @relation("workspaceMember")
+  issues           Issue[]
+  issuesAssigned   Issue[]     @relation("issueassigned")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,7 +61,42 @@ model Workspace {
   ownerId String
   owner   User   @relation("workspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  members User[] @relation("workspaceMember")
+  members User[]  @relation("workspaceMember")
+  issues  Issue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ISSUETYPE {
+  BACKLOG
+  TODO
+  INPROGRESS
+  DONE
+  CANCELLED
+}
+
+enum ISSUELABEL {
+  IMPROVEMENT
+  BUG
+  FEATURE
+}
+
+model Issue {
+  id      String      @id @default(cuid())
+  title   String
+  content String
+  status  ISSUETYPE   @default(TODO)
+  label   ISSUELABEL?
+  order   Int
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  assignedTo User[] @relation("issueassigned")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

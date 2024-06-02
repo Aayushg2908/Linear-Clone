@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
+import NextTopLoader from "nextjs-toploader";
 
 const font = Inter({ subsets: ["latin"] });
 
@@ -27,6 +28,7 @@ export default async function RootLayout({
     <SessionProvider session={session}>
       <html lang="en">
         <body className={`${font.className} dark`}>
+          <NextTopLoader color="#00008B" />
           {children}
           <Toaster richColors />
         </body>

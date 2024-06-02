@@ -9,8 +9,10 @@ const WorkspaceLayout = async ({
 }) => {
   return (
     <div className="w-full h-full flex">
-      <Sidebar workspaceId={params.workspaceId} />
-      <main className="md:ml-[220px]">{children}</main>
+      <div className="max-md:hidden">
+        <Sidebar workspaceId={params.workspaceId} />
+      </div>
+      <main className="w-full h-full md:ml-[220px]">{children}</main>
     </div>
   );
 };

@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-
 import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import { WorkspaceDropdown } from "./workspace-dropdown";
+import { Tabs } from "./tabs";
 
 export const Sidebar = async ({ workspaceId }: { workspaceId: string }) => {
   const session = await auth();
@@ -32,12 +32,14 @@ export const Sidebar = async ({ workspaceId }: { workspaceId: string }) => {
   }
 
   return (
-    <aside className="max-md:hidden w-[220px] h-screen fixed top-0 left-0 z-50 border-r border-r-slate-700 p-4">
+    <aside className="w-[220px] h-screen fixed top-0 left-0 z-50 border-r border-r-slate-700 p-4">
       <WorkspaceDropdown
         workspaceId={workspaceId}
         workspaceName={workspace.name}
         joinedWorkspaces={user.joinedWorkspaces}
+        width="w-[190px]"
       />
+      <Tabs workspaceId={workspaceId} />
     </aside>
   );
 };

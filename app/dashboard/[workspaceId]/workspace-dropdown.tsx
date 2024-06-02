@@ -8,6 +8,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 import {
   DropdownMenu,
@@ -21,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Workspace } from "@prisma/client";
-import { Check, CheckIcon, ChevronsUpDown } from "lucide-react";
+import { CheckIcon, ChevronsUpDown, PlusIcon } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,12 +31,14 @@ type Props = {
   workspaceId: string;
   workspaceName: string;
   joinedWorkspaces: Workspace[];
+  width: string;
 };
 
 export const WorkspaceDropdown = ({
   workspaceId,
   workspaceName,
   joinedWorkspaces,
+  width,
 }: Props) => {
   const router = useRouter();
 
@@ -48,7 +51,7 @@ export const WorkspaceDropdown = ({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[190px]">
+        <DropdownMenuContent align="end" className="w-full">
           <DropdownMenuGroup>
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href={`/dashboard/${workspaceId}/settings`}>
@@ -56,7 +59,7 @@ export const WorkspaceDropdown = ({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="cursor-pointer">
+              <DropdownMenuSubTrigger className={width}>
                 Switch Workspace
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="p-0">
@@ -69,10 +72,10 @@ export const WorkspaceDropdown = ({
                         <CommandItem
                           key={workspace.id}
                           value={workspace.name}
-                          onSelect={() => {
-                            router.push(`/dashboard/${workspace.id}`);
-                          }}
-                          className="justify-between"
+                          onSelect={() =>
+                            router.push(`/dashboard/${workspace.id}`)
+                          }
+                          className="justify-between cursor-pointer"
                         >
                           {workspace.name}
                           {workspace.id === workspaceId && (
@@ -80,6 +83,16 @@ export const WorkspaceDropdown = ({
                           )}
                         </CommandItem>
                       ))}
+                    </CommandGroup>
+                    <CommandSeparator />
+                    <CommandGroup>
+                      <CommandItem
+                        className="cursor-pointer"
+                        onSelect={() => router.push("/dashboard/join")}
+                      >
+                        <PlusIcon className="size-4 mr-1" />
+                        Create Workspace
+                      </CommandItem>
                     </CommandGroup>
                   </CommandList>
                 </Command>
