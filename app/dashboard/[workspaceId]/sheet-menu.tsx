@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import { Sidebar } from "./sidebar";
 import { auth } from "@/auth";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { WorkspaceDropdown } from "./workspace-dropdown";
 import { Tabs } from "./tabs";
 
-const SheetMenu = async ({ workspaceId }: { workspaceId: string }) => {
+export const SheetMenu = async ({ workspaceId }: { workspaceId: string }) => {
   const session = await auth();
   if (!session?.user && !session?.user?.id) {
     return redirect("/sign-in");
@@ -55,5 +54,3 @@ const SheetMenu = async ({ workspaceId }: { workspaceId: string }) => {
     </Sheet>
   );
 };
-
-export default SheetMenu;
