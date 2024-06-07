@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { IssueLabel, Issues } from "@/constants";
 import { useCreateIssue } from "@/hooks/use-create-issue";
+import { useRenameIssue } from "@/hooks/use-rename-issue";
 import { cn } from "@/lib/utils";
 import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
 import {
@@ -43,6 +44,7 @@ interface IssueCardProps {
 
 export const IssueCard = ({ issues }: IssueCardProps) => {
   const { onOpen } = useCreateIssue();
+  const { onOpen: onRenameOpen } = useRenameIssue();
   const { data } = useSession();
   const params = useParams();
 
@@ -130,7 +132,7 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
                         className="flex justify-between items-center border border-neutral-700 rounded-lg p-3"
                       >
                         <div className="flex flex-col gap-y-2">
-                          <span className="flex gap-x-1 items-center line-clamp-1">
+                          <span className="flex gap-x-1 items-center">
                             <DropdownMenu>
                               <DropdownMenuTrigger>
                                 <issue.Icon
@@ -173,14 +175,16 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
                                 ))}
                               </DropdownMenuContent>
                             </DropdownMenu>
-                            <span className="text-sm">{iss.title}</span>
+                            <span className="text-sm line-clamp-1">
+                              {iss.title}
+                            </span>
                           </span>
                           {iss.label && (
                             <DropdownMenu>
                               <DropdownMenuTrigger>
                                 <Badge
                                   variant="secondary"
-                                  className="flex items-center gap-x-1"
+                                  className="flex items-center gap-x-1 w-fit"
                                 >
                                   <div
                                     className={cn(
@@ -270,9 +274,13 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
                             <ContextMenuItem
                               key={label.type}
                               className="cursor-pointer"
-                              onClick={() =>
-                                handleLabelSelect(iss.id, label.type)
-                              }
+                              onClick={() => {
+                                if (iss.label !== label.type) {
+                                  handleLabelSelect(iss.id, label.type);
+                                } else {
+                                  handleLabelSelect(iss.id, null);
+                                }
+                              }}
                             >
                               <span className={label.className} />
                               {label.name}
@@ -283,7 +291,16 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
                           ))}
                         </ContextMenuSubContent>
                       </ContextMenuSub>
-                      <ContextMenuItem className="cursor-pointer">
+                      <ContextMenuItem
+                        onSelect={() =>
+                          onRenameOpen(
+                            iss.id,
+                            params.workspaceId as string,
+                            iss.title
+                          )
+                        }
+                        className="cursor-pointer"
+                      >
                         <Pencil className="size-4 mr-1" /> Rename
                       </ContextMenuItem>
                       <ContextMenuSeparator />
