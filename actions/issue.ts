@@ -80,7 +80,7 @@ export const updateIssue = async ({
     content?: string;
     status?: ISSUETYPE;
     order?: number;
-    label?: ISSUELABEL;
+    label?: ISSUELABEL | null;
   };
 }) => {
   const session = await auth();

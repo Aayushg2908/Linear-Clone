@@ -1,4 +1,4 @@
-import { ISSUETYPE } from "@prisma/client";
+import { ISSUELABEL, ISSUETYPE } from "@prisma/client";
 import {
   Circle,
   CircleCheck,
@@ -47,5 +47,29 @@ export const Issues: IssuesType[] = [
     name: "Cancelled",
     type: "CANCELLED",
     Icon: CircleX,
+  },
+];
+
+interface IssuesLabelType {
+  name: string;
+  type: ISSUELABEL;
+  className: string;
+}
+
+export const IssueLabel: IssuesLabelType[] = [
+  {
+    name: "Bug",
+    type: "BUG",
+    className: "bg-red-600 rounded-full size-4 mr-1",
+  },
+  {
+    name: "Feature",
+    type: "FEATURE",
+    className: "bg-purple-600 rounded-full size-4 mr-1",
+  },
+  {
+    name: "Improvement",
+    type: "IMPROVEMENT",
+    className: "bg-blue-600 rounded-full size-4 mr-1",
   },
 ];
