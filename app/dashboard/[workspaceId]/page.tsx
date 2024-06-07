@@ -1,9 +1,16 @@
 import { SheetMenu } from "./sheet-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueCard } from "./issue-card";
+import { getAllIssues } from "@/actions/issue";
 
-const WorkspacePage = ({ params }: { params: { workspaceId: string } }) => {
+const WorkspacePage = async ({
+  params,
+}: {
+  params: { workspaceId: string };
+}) => {
   const { workspaceId } = params;
+
+  const issues = await getAllIssues({ workspaceId });
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -14,7 +21,7 @@ const WorkspacePage = ({ params }: { params: { workspaceId: string } }) => {
         </div>
       </nav>
       <ScrollArea className="w-full h-full">
-        <IssueCard />
+        <IssueCard issues={issues} />
       </ScrollArea>
     </div>
   );

@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^1.5.1",
+    "@blocknote/core": "^0.13.5",
+    "@blocknote/mantine": "^0.13.5",
+    "@blocknote/react": "^0.13.5",
     "@gsap/react": "^2.1.1",
     "@hookform/resolvers": "^3.4.2",
     "@prisma/client": "^5.11.0",
@@ -40,7 +43,8 @@
     "sonner": "^1.4.41",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

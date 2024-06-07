@@ -26,3 +26,12 @@ export const WorkspaceSchema = z.object({
     message: "Minimum 5 characters required",
   }),
 });
+
+export const IssueSchema = z.object({
+  title: z.string().min(1, {
+    message: "Minimum 1 character required",
+  }),
+  content: z.string().min(1, {
+    message: "Minimum 1 character required",
+  }),
+});

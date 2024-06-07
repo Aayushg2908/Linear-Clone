@@ -51,7 +51,7 @@ export const WorkspaceDropdown = ({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-full">
+        <DropdownMenuContent align="start" className={width}>
           <DropdownMenuGroup>
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href={`/dashboard/${workspaceId}/settings`}>
@@ -59,9 +59,7 @@ export const WorkspaceDropdown = ({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className={width}>
-                Switch Workspace
-              </DropdownMenuSubTrigger>
+              <DropdownMenuSubTrigger>Switch Workspace</DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="p-0">
                 <Command>
                   <CommandInput placeholder="Search workspace..." autoFocus />
