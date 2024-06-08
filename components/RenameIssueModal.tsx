@@ -40,7 +40,7 @@ const RenameIssueModal = () => {
     if (value) {
       form.setValue("title", value);
     }
-  }, [value]);
+  }, [value, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {

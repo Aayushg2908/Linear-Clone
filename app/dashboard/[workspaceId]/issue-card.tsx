@@ -161,12 +161,9 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
                 if (!visible) return null;
 
                 return (
-                  <ContextMenu>
+                  <ContextMenu key={iss.id}>
                     <ContextMenuTrigger>
-                      <div
-                        key={iss.id}
-                        className="flex justify-between items-center border border-neutral-700 rounded-lg p-3"
-                      >
+                      <div className="flex justify-between items-center border border-neutral-700 rounded-lg p-3">
                         <div className="flex flex-col gap-y-2">
                           <span className="flex gap-x-1 items-center">
                             <DropdownMenu>
