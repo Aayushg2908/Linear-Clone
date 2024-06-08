@@ -187,7 +187,70 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
         toast.dismiss();
       }
     } else {
-      console.log("Different column");
+      try {
+        toast.loading("Moving issue...");
+        const sourceIssuesList = [...issues[source.droppableId as ISSUETYPE]];
+        const destinationIssuesList = [
+          ...issues[destination.droppableId as ISSUETYPE],
+        ];
+
+        const [removed] = sourceIssuesList.splice(source.index, 1);
+        destinationIssuesList.splice(destination.index, 0, removed);
+
+        const updatedIssues = {
+          ...issues,
+          [source.droppableId]: sourceIssuesList,
+          [destination.droppableId]: destinationIssuesList,
+        };
+
+        updatedIssues[source.droppableId as ISSUETYPE].forEach(
+          (issue, index) => {
+            issue.order = index;
+          }
+        );
+        updatedIssues[destination.droppableId as ISSUETYPE].forEach(
+          (issue, index) => {
+            issue.order = index;
+          }
+        );
+
+        issues[source.droppableId as ISSUETYPE] =
+          updatedIssues[source.droppableId as ISSUETYPE];
+        issues[destination.droppableId as ISSUETYPE] =
+          updatedIssues[destination.droppableId as ISSUETYPE];
+
+        for (const issue of updatedIssues[source.droppableId as ISSUETYPE]) {
+          await updateIssue({
+            id: issue.id,
+            userId: data?.user?.id!,
+            workspaceId: params.workspaceId as string,
+            values: {
+              order: issue.order,
+            },
+          });
+        }
+
+        for (const issue of updatedIssues[
+          destination.droppableId as ISSUETYPE
+        ]) {
+          await updateIssue({
+            id: issue.id,
+            userId: data?.user?.id!,
+            workspaceId: params.workspaceId as string,
+            values: {
+              order: issue.order,
+              status: destination.droppableId as ISSUETYPE,
+            },
+          });
+        }
+
+        toast.success("Issue reordered successfully.");
+        window.location.reload();
+      } catch (error) {
+        toast.error("Something went wrong! Please try again.");
+      } finally {
+        toast.dismiss();
+      }
     }
   };
 
