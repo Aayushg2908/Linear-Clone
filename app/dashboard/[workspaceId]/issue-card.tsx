@@ -156,202 +156,203 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
               </Button>
             </div>
             <div className="w-full flex flex-col gap-y-1 p-2">
-              {issues.map((iss) => (
-                <>
-                  {iss.status === issue.type && (
-                    <ContextMenu>
-                      <ContextMenuTrigger>
-                        <div
-                          key={iss.id}
-                          className="flex justify-between items-center border border-neutral-700 rounded-lg p-3"
-                        >
-                          <div className="flex flex-col gap-y-2">
-                            <span className="flex gap-x-1 items-center">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger>
-                                  <issue.Icon
-                                    className={cn(
-                                      "size-4 text-white rounded-full",
-                                      issue.type === "DONE" && "bg-green-600 ",
-                                      issue.type === "INPROGRESS" &&
-                                        "bg-yellow-600",
-                                      issue.type === "CANCELLED" && "bg-red-600"
-                                    )}
-                                  />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  {Issues.map((issue) => (
-                                    <DropdownMenuItem
-                                      key={issue.type}
-                                      className="flex items-center justify-between cursor-pointer"
-                                      onSelect={() =>
-                                        handleStatusSelect(iss.id, issue.type)
-                                      }
-                                    >
-                                      <span className="flex gap-x-2 items-center">
-                                        <issue.Icon
-                                          className={cn(
-                                            "size-4 text-white rounded-full",
-                                            issue.type === "DONE" &&
-                                              "bg-green-600 ",
-                                            issue.type === "INPROGRESS" &&
-                                              "bg-yellow-600",
-                                            issue.type === "CANCELLED" &&
-                                              "bg-red-600"
-                                          )}
-                                        />
-                                        {issue.name}
-                                      </span>
-                                      {issue.type === iss.status && (
-                                        <CheckIcon className="ml-1 size-4 text-green-600" />
-                                      )}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                              <span className="text-sm line-clamp-1">
-                                {iss.title}
-                              </span>
-                            </span>
-                            {iss.label && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger>
-                                  <Badge
-                                    variant="secondary"
-                                    className="flex items-center gap-x-1 w-fit"
+              {issues.map((iss) => {
+                const visible = iss.status === issue.type;
+                if (!visible) return null;
+
+                return (
+                  <ContextMenu>
+                    <ContextMenuTrigger>
+                      <div
+                        key={iss.id}
+                        className="flex justify-between items-center border border-neutral-700 rounded-lg p-3"
+                      >
+                        <div className="flex flex-col gap-y-2">
+                          <span className="flex gap-x-1 items-center">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <issue.Icon
+                                  className={cn(
+                                    "size-4 text-white rounded-full",
+                                    issue.type === "DONE" && "bg-green-600 ",
+                                    issue.type === "INPROGRESS" &&
+                                      "bg-yellow-600",
+                                    issue.type === "CANCELLED" && "bg-red-600"
+                                  )}
+                                />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                {Issues.map((issue) => (
+                                  <DropdownMenuItem
+                                    key={issue.type}
+                                    className="flex items-center justify-between cursor-pointer"
+                                    onSelect={() =>
+                                      handleStatusSelect(iss.id, issue.type)
+                                    }
                                   >
-                                    <div
-                                      className={cn(
-                                        "size-3 rounded-full",
-                                        iss.label === "BUG" && "bg-red-600",
-                                        iss.label === "FEATURE" &&
-                                          "bg-purple-600",
-                                        iss.label === "IMPROVEMENT" &&
-                                          "bg-blue-600"
-                                      )}
-                                    />
-                                    {iss.label}
-                                  </Badge>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  {IssueLabel.map((label) => (
-                                    <DropdownMenuItem
-                                      key={label.type}
-                                      className="cursor-pointer"
-                                      onSelect={() => {
-                                        if (iss.label !== label.type) {
-                                          handleLabelSelect(iss.id, label.type);
-                                        } else {
-                                          handleLabelSelect(iss.id, null);
-                                        }
-                                      }}
-                                    >
-                                      <span className={label.className} />
-                                      {label.name}
-                                      {label.type === iss.label && (
-                                        <CheckIcon className="size-4 text-green-600 ml-2" />
-                                      )}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="border border-neutral-700"
-                          >
-                            <Grip className="size-4" />
-                          </Button>
-                        </div>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent className="w-40">
-                        <ContextMenuSub>
-                          <ContextMenuSubTrigger className="cursor-pointer">
-                            <CirclePlay className="size-4 mr-1" /> Status
-                          </ContextMenuSubTrigger>
-                          <ContextMenuSubContent>
-                            {Issues.map((issue) => (
-                              <ContextMenuItem
-                                key={issue.type}
-                                onSelect={() =>
-                                  handleStatusSelect(iss.id, issue.type)
-                                }
-                                className="cursor-pointer"
-                              >
-                                <span className="flex gap-x-2 items-center">
-                                  <issue.Icon
+                                    <span className="flex gap-x-2 items-center">
+                                      <issue.Icon
+                                        className={cn(
+                                          "size-4 text-white rounded-full",
+                                          issue.type === "DONE" &&
+                                            "bg-green-600 ",
+                                          issue.type === "INPROGRESS" &&
+                                            "bg-yellow-600",
+                                          issue.type === "CANCELLED" &&
+                                            "bg-red-600"
+                                        )}
+                                      />
+                                      {issue.name}
+                                    </span>
+                                    {issue.type === iss.status && (
+                                      <CheckIcon className="ml-1 size-4 text-green-600" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <span className="text-sm line-clamp-1">
+                              {iss.title}
+                            </span>
+                          </span>
+                          {iss.label && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <Badge
+                                  variant="secondary"
+                                  className="flex items-center gap-x-1 w-fit"
+                                >
+                                  <div
                                     className={cn(
-                                      "size-4 text-white rounded-full",
-                                      issue.type === "DONE" && "bg-green-600 ",
-                                      issue.type === "INPROGRESS" &&
-                                        "bg-yellow-600",
-                                      issue.type === "CANCELLED" && "bg-red-600"
+                                      "size-3 rounded-full",
+                                      iss.label === "BUG" && "bg-red-600",
+                                      iss.label === "FEATURE" &&
+                                        "bg-purple-600",
+                                      iss.label === "IMPROVEMENT" &&
+                                        "bg-blue-600"
                                     )}
                                   />
-                                  {issue.name}
-                                </span>
-                                {issue.type === iss.status && (
-                                  <CheckIcon className="ml-1 size-4 text-green-600" />
-                                )}
-                              </ContextMenuItem>
-                            ))}
-                          </ContextMenuSubContent>
-                        </ContextMenuSub>
-                        <ContextMenuSub>
-                          <ContextMenuSubTrigger className="cursor-pointer">
-                            <Tag className="size-4 mr-1" /> Label
-                          </ContextMenuSubTrigger>
-                          <ContextMenuSubContent>
-                            {IssueLabel.map((label) => (
-                              <ContextMenuItem
-                                key={label.type}
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  if (iss.label !== label.type) {
-                                    handleLabelSelect(iss.id, label.type);
-                                  } else {
-                                    handleLabelSelect(iss.id, null);
-                                  }
-                                }}
-                              >
-                                <span className={label.className} />
-                                {label.name}
-                                {label.type === iss.label && (
-                                  <CheckIcon className="size-4 text-green-600 ml-2" />
-                                )}
-                              </ContextMenuItem>
-                            ))}
-                          </ContextMenuSubContent>
-                        </ContextMenuSub>
-                        <ContextMenuItem
-                          onSelect={() =>
-                            onRenameOpen(
-                              iss.id,
-                              params.workspaceId as string,
-                              iss.title
-                            )
-                          }
-                          className="cursor-pointer"
+                                  {iss.label}
+                                </Badge>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                {IssueLabel.map((label) => (
+                                  <DropdownMenuItem
+                                    key={label.type}
+                                    className="cursor-pointer"
+                                    onSelect={() => {
+                                      if (iss.label !== label.type) {
+                                        handleLabelSelect(iss.id, label.type);
+                                      } else {
+                                        handleLabelSelect(iss.id, null);
+                                      }
+                                    }}
+                                  >
+                                    <span className={label.className} />
+                                    {label.name}
+                                    {label.type === iss.label && (
+                                      <CheckIcon className="size-4 text-green-600 ml-2" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="border border-neutral-700"
                         >
-                          <Pencil className="size-4 mr-1" /> Rename
-                        </ContextMenuItem>
-                        <ContextMenuSeparator />
-                        <ContextMenuItem
-                          onSelect={() => {
-                            setSelectedIssueId(iss.id);
-                            setAlertDialogOpen(true);
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <Trash2 className="size-4 mr-1" /> Delete
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  )}
-                </>
-              ))}
+                          <Grip className="size-4" />
+                        </Button>
+                      </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-40">
+                      <ContextMenuSub>
+                        <ContextMenuSubTrigger className="cursor-pointer">
+                          <CirclePlay className="size-4 mr-1" /> Status
+                        </ContextMenuSubTrigger>
+                        <ContextMenuSubContent>
+                          {Issues.map((issue) => (
+                            <ContextMenuItem
+                              key={issue.type}
+                              onSelect={() =>
+                                handleStatusSelect(iss.id, issue.type)
+                              }
+                              className="cursor-pointer"
+                            >
+                              <span className="flex gap-x-2 items-center">
+                                <issue.Icon
+                                  className={cn(
+                                    "size-4 text-white rounded-full",
+                                    issue.type === "DONE" && "bg-green-600 ",
+                                    issue.type === "INPROGRESS" &&
+                                      "bg-yellow-600",
+                                    issue.type === "CANCELLED" && "bg-red-600"
+                                  )}
+                                />
+                                {issue.name}
+                              </span>
+                              {issue.type === iss.status && (
+                                <CheckIcon className="ml-1 size-4 text-green-600" />
+                              )}
+                            </ContextMenuItem>
+                          ))}
+                        </ContextMenuSubContent>
+                      </ContextMenuSub>
+                      <ContextMenuSub>
+                        <ContextMenuSubTrigger className="cursor-pointer">
+                          <Tag className="size-4 mr-1" /> Label
+                        </ContextMenuSubTrigger>
+                        <ContextMenuSubContent>
+                          {IssueLabel.map((label) => (
+                            <ContextMenuItem
+                              key={label.type}
+                              className="cursor-pointer"
+                              onClick={() => {
+                                if (iss.label !== label.type) {
+                                  handleLabelSelect(iss.id, label.type);
+                                } else {
+                                  handleLabelSelect(iss.id, null);
+                                }
+                              }}
+                            >
+                              <span className={label.className} />
+                              {label.name}
+                              {label.type === iss.label && (
+                                <CheckIcon className="size-4 text-green-600 ml-2" />
+                              )}
+                            </ContextMenuItem>
+                          ))}
+                        </ContextMenuSubContent>
+                      </ContextMenuSub>
+                      <ContextMenuItem
+                        onSelect={() =>
+                          onRenameOpen(
+                            iss.id,
+                            params.workspaceId as string,
+                            iss.title
+                          )
+                        }
+                        className="cursor-pointer"
+                      >
+                        <Pencil className="size-4 mr-1" /> Rename
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem
+                        onSelect={() => {
+                          setSelectedIssueId(iss.id);
+                          setAlertDialogOpen(true);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Trash2 className="size-4 mr-1" /> Delete
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
+                );
+              })}
               <Button
                 onClick={() => onOpen(issue.type)}
                 size="icon"
