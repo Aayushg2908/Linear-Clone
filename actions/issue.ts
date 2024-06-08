@@ -93,24 +93,12 @@ export const updateIssue = async ({
       id,
       workspaceId,
     },
-    include: {
-      assignedTo: true,
-    },
   });
   if (!issue) {
     return { error: "Issue not found" };
   }
 
-  const user = await db.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
-  if (!user) {
-    return { error: "User not found" };
-  }
-
-  if (issue.ownerId === session.user.id || issue.assignedTo.includes(user)) {
+  if (issue.ownerId === session.user.id || issue.assignedTo.includes(userId)) {
     await db.issue.update({
       where: {
         id,
@@ -124,6 +112,45 @@ export const updateIssue = async ({
     revalidatePath(`/dashboard/${workspaceId}`);
 
     return { success: "Issue status updated successfully!" };
+  }
+
+  return { error: "You do not have the permission to do this action!" };
+};
+
+export const deleteIssue = async ({
+  id,
+  userId,
+  workspaceId,
+}: {
+  id: string;
+  userId: string;
+  workspaceId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const issue = await db.issue.findUnique({
+    where: {
+      id,
+      workspaceId,
+    },
+  });
+  if (!issue) {
+    return { error: "Issue not found" };
+  }
+
+  if (issue.ownerId === session.user.id || issue.assignedTo.includes(userId)) {
+    await db.issue.delete({
+      where: {
+        id,
+      },
+    });
+
+    revalidatePath(`/dashboard/${workspaceId}`);
+
+    return { success: "Issue deleted successfully!" };
   }
 
   return { error: "You do not have the permission to do this action!" };

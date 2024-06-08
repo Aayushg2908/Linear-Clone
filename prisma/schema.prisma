@@ -38,7 +38,6 @@ model User {
   workspaces       Workspace[] @relation("workspaceOwner")
   joinedWorkspaces Workspace[] @relation("workspaceMember")
   issues           Issue[]
-  issuesAssigned   Issue[]     @relation("issueassigned")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -96,7 +95,7 @@ model Issue {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  assignedTo User[] @relation("issueassigned")
+  assignedTo String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
