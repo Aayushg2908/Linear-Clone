@@ -12,6 +12,24 @@ const WorkspacePage = async ({
 
   const issues = await getAllIssues({ workspaceId });
 
+  const backlogIssues = issues.filter((issue) => issue.status === "BACKLOG");
+  const todoIssues = issues.filter((issue) => issue.status === "TODO");
+  const inProgressIssues = issues.filter(
+    (issue) => issue.status === "INPROGRESS"
+  );
+  const doneIssues = issues.filter((issue) => issue.status === "DONE");
+  const cancelledIssues = issues.filter(
+    (issue) => issue.status === "CANCELLED"
+  );
+
+  const finalIssues = {
+    BACKLOG: backlogIssues,
+    TODO: todoIssues,
+    INPROGRESS: inProgressIssues,
+    DONE: doneIssues,
+    CANCELLED: cancelledIssues,
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
       <nav className="w-full h-[50px] px-4 flex items-center justify-between border-b border-b-slate-600">
@@ -21,7 +39,7 @@ const WorkspacePage = async ({
         </div>
       </nav>
       <ScrollArea className="w-full h-full">
-        <IssueCard issues={issues} />
+        <IssueCard issues={finalIssues} />
       </ScrollArea>
     </div>
   );

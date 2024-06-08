@@ -25,6 +25,7 @@ export const createIssue = async ({
   const lastIssue = await db.issue.findFirst({
     where: {
       workspaceId,
+      status,
     },
     orderBy: {
       order: "desc",
