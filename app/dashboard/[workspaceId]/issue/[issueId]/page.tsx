@@ -2,6 +2,7 @@ import { getIssueById } from "@/actions/issue";
 import { SheetMenu } from "../../sheet-menu";
 import IssueSidebar from "./issue-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import IssueSidebarMenu from "./issue-sidebar-menu";
 
 const IssuePage = async ({
   params,
@@ -21,6 +22,9 @@ const IssuePage = async ({
               <SheetMenu workspaceId={workspaceId} />
             </div>
             <span className="font-bold text-lg md:pl-4">{issue.title}</span>
+          </div>
+          <div className="md:hidden">
+            <IssueSidebarMenu issue={issue} workspaceId={workspaceId} />
           </div>
         </nav>
         <ScrollArea className="w-full h-full">Children</ScrollArea>

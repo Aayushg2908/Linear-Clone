@@ -15,7 +15,7 @@ import { CheckIcon, CircleUserRound, PlusIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
-const getIconIndex = (status: ISSUETYPE) => {
+export const getIconIndex = (status: ISSUETYPE) => {
   switch (status) {
     case ISSUETYPE.BACKLOG:
       return 0;
