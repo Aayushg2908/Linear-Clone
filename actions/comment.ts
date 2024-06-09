@@ -52,6 +52,9 @@ export const getAllComments = async ({ issueId }: { issueId: string }) => {
     include: {
       owner: true,
     },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
   return comments;
@@ -92,4 +95,51 @@ export const deleteComment = async ({ id }: { id: string }) => {
   );
 
   return { success: "Comment deleted successfully!" };
+};
+
+export const updateComment = async ({
+  value,
+  issueId,
+  commentId,
+}: {
+  value: string;
+  issueId: string;
+  commentId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const issue = await db.issue.findUnique({
+    where: {
+      id: issueId,
+    },
+  });
+  if (!issue) {
+    return { error: "Issue not found" };
+  }
+
+  const comment = await db.comment.findUnique({
+    where: {
+      id: commentId,
+    },
+  });
+  if (!comment) {
+    return { error: "Comment not found" };
+  }
+
+  await db.comment.update({
+    where: {
+      id: commentId,
+      ownerId: session.user.id!,
+    },
+    data: {
+      value,
+    },
+  });
+
+  revalidatePath(`/dashboard/${issue.workspaceId}/issue/${issueId}`);
+
+  return { success: "Comment updated successfully!" };
 };

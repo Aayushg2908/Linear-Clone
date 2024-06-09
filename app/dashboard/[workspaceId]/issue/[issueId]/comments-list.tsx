@@ -11,9 +11,10 @@ import {
 import { timeAgo } from "@/lib/utils";
 import { Comment, User } from "@prisma/client";
 import { EditIcon, Ellipsis, Trash2, UserCircleIcon } from "lucide-react";
-import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { useState } from "react";
 import { toast } from "sonner";
+import AddCommentForm from "./add-comment-form";
 
 interface CommentsListProps {
   comments: (Comment & {
@@ -22,7 +23,7 @@ interface CommentsListProps {
 }
 
 const CommentsList = ({ comments }: CommentsListProps) => {
-  const { data } = useSession();
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleDeleteComment = async (id: string) => {
     try {
@@ -68,7 +69,10 @@ const CommentsList = ({ comments }: CommentsListProps) => {
                 <Ellipsis className="size-5 hidden group-hover:block cursor-pointer" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem
+                  onSelect={() => setIsEditing(true)}
+                  className="cursor-pointer"
+                >
                   <EditIcon className="size-5 mr-2" />
                   Edit
                 </DropdownMenuItem>
@@ -83,7 +87,16 @@ const CommentsList = ({ comments }: CommentsListProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <p className="mt-2 ml-1 text-lg">{comment.value}</p>
+          {isEditing ? (
+            <AddCommentForm
+              issueId={comment.issueId}
+              value={comment.value}
+              commentId={comment.id}
+              onSubmitted={() => setIsEditing(false)}
+            />
+          ) : (
+            <p className="mt-2 ml-1 text-lg">{comment.value}</p>
+          )}
         </div>
       ))}
     </div>
