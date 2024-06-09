@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { ISSUELABEL, ISSUETYPE } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const createIssue = async ({
   title,
@@ -111,6 +111,7 @@ export const updateIssue = async ({
     });
 
     revalidatePath(`/dashboard/${workspaceId}`);
+    revalidatePath(`/dashboard/${workspaceId}/issue/${id}`);
 
     return { success: "Issue status updated successfully!" };
   }
@@ -155,4 +156,29 @@ export const deleteIssue = async ({
   }
 
   return { error: "You do not have the permission to do this action!" };
+};
+
+export const getIssueById = async ({
+  workspaceId,
+  issueId,
+}: {
+  workspaceId: string;
+  issueId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const issue = await db.issue.findUnique({
+    where: {
+      id: issueId,
+      workspaceId,
+    },
+  });
+  if (!issue) {
+    return notFound();
+  }
+
+  return issue;
 };

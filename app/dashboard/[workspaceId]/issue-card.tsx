@@ -48,6 +48,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import Link from "next/link";
 
 interface IssueCardProps {
   issues: {
@@ -349,9 +350,12 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
                                         ))}
                                       </DropdownMenuContent>
                                     </DropdownMenu>
-                                    <span className="text-sm line-clamp-1">
+                                    <Link
+                                      href={`/dashboard/${params.workspaceId}/issue/${iss.id}`}
+                                      className="text-sm line-clamp-1 hover:underline hover:text-blue-500"
+                                    >
                                       {iss.title}
-                                    </span>
+                                    </Link>
                                   </span>
                                   {iss.label && (
                                     <DropdownMenu>
