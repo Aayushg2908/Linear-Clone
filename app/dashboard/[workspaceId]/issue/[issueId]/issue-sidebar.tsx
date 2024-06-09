@@ -1,7 +1,19 @@
 "use client";
 
-import { updateIssue } from "@/actions/issue";
+import { deleteIssue, updateIssue } from "@/actions/issue";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,8 +23,9 @@ import {
 import { IssueLabel, Issues } from "@/constants";
 import { cn } from "@/lib/utils";
 import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
-import { CheckIcon, CircleUserRound, PlusIcon } from "lucide-react";
+import { CheckIcon, CircleUserRound, PlusIcon, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export const getIconIndex = (status: ISSUETYPE) => {
@@ -41,6 +54,7 @@ const IssueSidebar = ({
 }) => {
   const Icon = Issues[getIconIndex(issue.status)].Icon;
   const { data } = useSession();
+  const router = useRouter();
 
   const handleStatusSelect = async (id: string, status: ISSUETYPE) => {
     try {
@@ -48,7 +62,7 @@ const IssueSidebar = ({
       const response = await updateIssue({
         id,
         userId: data?.user?.id!,
-        workspaceId: workspaceId as string,
+        workspaceId: workspaceId,
         values: {
           status,
         },
@@ -71,7 +85,7 @@ const IssueSidebar = ({
       const response = await updateIssue({
         id,
         userId: data?.user?.id!,
-        workspaceId: workspaceId as string,
+        workspaceId: workspaceId,
         values: {
           label,
         },
@@ -80,6 +94,27 @@ const IssueSidebar = ({
         toast.error(response.error);
       } else if (response.success) {
         toast.success("Issue label updated successfully.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleIssueDelete = async () => {
+    try {
+      toast.loading("Deleting issue...");
+      const response = await deleteIssue({
+        id: issue.id,
+        userId: data?.user?.id!,
+        workspaceId: workspaceId,
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success("Issue deleted successfully.");
+        router.push(`/dashboard/${workspaceId}`);
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -178,6 +213,34 @@ const IssueSidebar = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent>Yet to be done</DropdownMenuContent>
       </DropdownMenu>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button className="w-fit bg-red-600 hover:bg-red-700 text-white">
+            <Trash2 className="size-5 mr-1" />
+            Delete Issue
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Are you sure you want to delete this Issue?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this
+              issue.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleIssueDelete}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </aside>
   );
 };

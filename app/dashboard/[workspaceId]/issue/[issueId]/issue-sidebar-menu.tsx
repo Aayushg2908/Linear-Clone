@@ -3,7 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
-import { CheckIcon, CircleUserRound, MenuIcon, PlusIcon } from "lucide-react";
+import {
+  CheckIcon,
+  CircleUserRound,
+  MenuIcon,
+  PlusIcon,
+  Trash2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -11,13 +17,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { updateIssue } from "@/actions/issue";
+import { updateIssue, deleteIssue } from "@/actions/issue";
 import { useSession } from "next-auth/react";
 import { IssueLabel, Issues } from "@/constants";
 import { getIconIndex } from "./issue-sidebar";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const IssueSidebarMenu = ({
   issue,
@@ -29,6 +47,7 @@ const IssueSidebarMenu = ({
   const Icon = Issues[getIconIndex(issue.status)].Icon;
   const { data } = useSession();
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
@@ -72,6 +91,27 @@ const IssueSidebarMenu = ({
         toast.error(response.error);
       } else if (response.success) {
         toast.success("Issue label updated successfully.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleIssueDelete = async () => {
+    try {
+      toast.loading("Deleting issue...");
+      const response = await deleteIssue({
+        id: issue.id,
+        userId: data?.user?.id!,
+        workspaceId: workspaceId,
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success("Issue deleted successfully.");
+        router.push(`/dashboard/${workspaceId}`);
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -178,6 +218,34 @@ const IssueSidebarMenu = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent>Yet to be done</DropdownMenuContent>
         </DropdownMenu>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button className="w-fit bg-red-600 hover:bg-red-700 text-white">
+              <Trash2 className="size-5 mr-1" />
+              Delete Issue
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure you want to delete this Issue?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete this
+                issue.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleIssueDelete}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   );

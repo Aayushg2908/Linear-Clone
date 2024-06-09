@@ -3,6 +3,7 @@ import { SheetMenu } from "../../sheet-menu";
 import IssueSidebar from "./issue-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import IssueSidebarMenu from "./issue-sidebar-menu";
+import RenameIssueButton from "./rename-issue-button";
 
 const IssuePage = async ({
   params,
@@ -21,7 +22,11 @@ const IssuePage = async ({
             <div className="md:hidden">
               <SheetMenu workspaceId={workspaceId} />
             </div>
-            <span className="font-bold text-lg md:pl-4">{issue.title}</span>
+            <RenameIssueButton
+              value={issue.title}
+              workspaceId={workspaceId}
+              issueId={issue.id}
+            />
           </div>
           <div className="md:hidden">
             <IssueSidebarMenu issue={issue} workspaceId={workspaceId} />
