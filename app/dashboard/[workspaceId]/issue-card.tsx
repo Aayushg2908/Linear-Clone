@@ -43,7 +43,6 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -63,7 +62,6 @@ interface IssueCardProps {
 export const IssueCard = ({ issues }: IssueCardProps) => {
   const { onOpen } = useCreateIssue();
   const { onOpen: onRenameOpen } = useRenameIssue();
-  const { data } = useSession();
   const params = useParams();
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState("");
@@ -73,7 +71,6 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
       toast.loading("Updating issue status...");
       const response = await updateIssue({
         id,
-        userId: data?.user?.id!,
         workspaceId: params.workspaceId as string,
         values: {
           status,
@@ -96,7 +93,6 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
       toast.loading("Updating issue label...");
       const response = await updateIssue({
         id,
-        userId: data?.user?.id!,
         workspaceId: params.workspaceId as string,
         values: {
           label,
@@ -119,7 +115,6 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
       toast.loading("Deleting issue...");
       const response = await deleteIssue({
         id: selectedIssueId,
-        userId: data?.user?.id!,
         workspaceId: params.workspaceId as string,
       });
       if (response.error) {
@@ -172,7 +167,6 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
         for (const issue of updatedIssues[source.droppableId as ISSUETYPE]) {
           await updateIssue({
             id: issue.id,
-            userId: data?.user?.id!,
             workspaceId: params.workspaceId as string,
             values: {
               order: issue.order,
@@ -223,7 +217,6 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
         for (const issue of updatedIssues[source.droppableId as ISSUETYPE]) {
           await updateIssue({
             id: issue.id,
-            userId: data?.user?.id!,
             workspaceId: params.workspaceId as string,
             values: {
               order: issue.order,
@@ -236,7 +229,6 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
         ]) {
           await updateIssue({
             id: issue.id,
-            userId: data?.user?.id!,
             workspaceId: params.workspaceId as string,
             values: {
               order: issue.order,

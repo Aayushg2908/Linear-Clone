@@ -16,7 +16,6 @@ import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { updateIssue } from "@/actions/issue";
-import { useSession } from "next-auth/react";
 
 const formSchema = z.object({
   title: z.string().min(1, {
@@ -27,7 +26,6 @@ const formSchema = z.object({
 const RenameIssueModal = () => {
   const { issueId, workspaceId, value, isOpen, onClose } = useRenameIssue();
   const [isLoading, setIsLoading] = useState(false);
-  const { data } = useSession();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,7 +45,6 @@ const RenameIssueModal = () => {
       setIsLoading(true);
       const response = await updateIssue({
         id: issueId,
-        userId: data?.user?.id!,
         workspaceId: workspaceId,
         values: {
           title: values.title,

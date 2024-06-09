@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { updateIssue, deleteIssue } from "@/actions/issue";
-import { useSession } from "next-auth/react";
 import { IssueLabel, Issues } from "@/constants";
 import { getIconIndex } from "./issue-sidebar";
 import { cn } from "@/lib/utils";
@@ -45,7 +44,6 @@ const IssueSidebarMenu = ({
   workspaceId: string;
 }) => {
   const Icon = Issues[getIconIndex(issue.status)].Icon;
-  const { data } = useSession();
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
@@ -58,7 +56,6 @@ const IssueSidebarMenu = ({
       toast.loading("Updating issue status...");
       const response = await updateIssue({
         id,
-        userId: data?.user?.id!,
         workspaceId: workspaceId as string,
         values: {
           status,
@@ -81,7 +78,6 @@ const IssueSidebarMenu = ({
       toast.loading("Updating issue label...");
       const response = await updateIssue({
         id,
-        userId: data?.user?.id!,
         workspaceId: workspaceId as string,
         values: {
           label,
@@ -104,7 +100,6 @@ const IssueSidebarMenu = ({
       toast.loading("Deleting issue...");
       const response = await deleteIssue({
         id: issue.id,
-        userId: data?.user?.id!,
         workspaceId: workspaceId,
       });
       if (response.error) {

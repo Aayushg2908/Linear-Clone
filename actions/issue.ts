@@ -70,12 +70,10 @@ export const getAllIssues = async ({
 export const updateIssue = async ({
   id,
   workspaceId,
-  userId,
   values,
 }: {
   id: string;
   workspaceId: string;
-  userId: string;
   values: {
     title?: string;
     content?: string;
@@ -99,7 +97,10 @@ export const updateIssue = async ({
     return { error: "Issue not found" };
   }
 
-  if (issue.ownerId === session.user.id || issue.assignedTo.includes(userId)) {
+  if (
+    issue.ownerId === session.user.id ||
+    issue.assignedTo.includes(session.user.id!)
+  ) {
     await db.issue.update({
       where: {
         id,
@@ -121,11 +122,9 @@ export const updateIssue = async ({
 
 export const deleteIssue = async ({
   id,
-  userId,
   workspaceId,
 }: {
   id: string;
-  userId: string;
   workspaceId: string;
 }) => {
   const session = await auth();
@@ -143,7 +142,10 @@ export const deleteIssue = async ({
     return { error: "Issue not found" };
   }
 
-  if (issue.ownerId === session.user.id || issue.assignedTo.includes(userId)) {
+  if (
+    issue.ownerId === session.user.id ||
+    issue.assignedTo.includes(session.user.id!)
+  ) {
     await db.issue.delete({
       where: {
         id,

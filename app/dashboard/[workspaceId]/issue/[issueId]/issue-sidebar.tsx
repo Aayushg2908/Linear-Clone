@@ -24,7 +24,6 @@ import { IssueLabel, Issues } from "@/constants";
 import { cn } from "@/lib/utils";
 import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
 import { CheckIcon, CircleUserRound, PlusIcon, Trash2 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -53,7 +52,6 @@ const IssueSidebar = ({
   workspaceId: string;
 }) => {
   const Icon = Issues[getIconIndex(issue.status)].Icon;
-  const { data } = useSession();
   const router = useRouter();
 
   const handleStatusSelect = async (id: string, status: ISSUETYPE) => {
@@ -61,7 +59,6 @@ const IssueSidebar = ({
       toast.loading("Updating issue status...");
       const response = await updateIssue({
         id,
-        userId: data?.user?.id!,
         workspaceId: workspaceId,
         values: {
           status,
@@ -84,7 +81,6 @@ const IssueSidebar = ({
       toast.loading("Updating issue label...");
       const response = await updateIssue({
         id,
-        userId: data?.user?.id!,
         workspaceId: workspaceId,
         values: {
           label,
@@ -107,7 +103,6 @@ const IssueSidebar = ({
       toast.loading("Deleting issue...");
       const response = await deleteIssue({
         id: issue.id,
-        userId: data?.user?.id!,
         workspaceId: workspaceId,
       });
       if (response.error) {

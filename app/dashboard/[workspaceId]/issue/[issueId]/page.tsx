@@ -4,6 +4,7 @@ import IssueSidebar from "./issue-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import IssueSidebarMenu from "./issue-sidebar-menu";
 import RenameIssueButton from "./rename-issue-button";
+import MainContent from "./main-content";
 
 const IssuePage = async ({
   params,
@@ -32,7 +33,9 @@ const IssuePage = async ({
             <IssueSidebarMenu issue={issue} workspaceId={workspaceId} />
           </div>
         </nav>
-        <ScrollArea className="w-full h-full">Children</ScrollArea>
+        <ScrollArea className="w-full h-full">
+          <MainContent issue={issue} workspaceId={workspaceId} />
+        </ScrollArea>
       </div>
       <IssueSidebar issue={issue} workspaceId={workspaceId} />
     </div>
