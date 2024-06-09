@@ -56,3 +56,40 @@ export const getAllComments = async ({ issueId }: { issueId: string }) => {
 
   return comments;
 };
+
+export const deleteComment = async ({ id }: { id: string }) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const comment = await db.comment.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      issue: {
+        select: {
+          workspaceId: true,
+        },
+      },
+      issueId: true,
+    },
+  });
+  if (!comment) {
+    return { error: "Comment not found" };
+  }
+
+  await db.comment.delete({
+    where: {
+      id,
+      ownerId: session.user.id!,
+    },
+  });
+
+  revalidatePath(
+    `/dashboard/${comment.issue.workspaceId}/issue/${comment.issueId}`
+  );
+
+  return { success: "Comment deleted successfully!" };
+};

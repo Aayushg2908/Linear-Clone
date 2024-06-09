@@ -1,9 +1,19 @@
 "use client";
 
+import { deleteComment } from "@/actions/comment";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { timeAgo } from "@/lib/utils";
 import { Comment, User } from "@prisma/client";
-import { Ellipsis, UserCircleIcon } from "lucide-react";
+import { EditIcon, Ellipsis, Trash2, UserCircleIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface CommentsListProps {
   comments: (Comment & {
@@ -12,6 +22,24 @@ interface CommentsListProps {
 }
 
 const CommentsList = ({ comments }: CommentsListProps) => {
+  const { data } = useSession();
+
+  const handleDeleteComment = async (id: string) => {
+    try {
+      toast.loading("Deleting comment...");
+      const response = await deleteComment({ id });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success("Comment deleted successfully!");
+      }
+    } catch (error) {
+      toast.error("Something went wrong, please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
   return (
     <div className="mt-4 flex flex-col w-full gap-y-2">
       {comments.map((comment) => (
@@ -35,7 +63,25 @@ const CommentsList = ({ comments }: CommentsListProps) => {
               <span className="font-bold text-sm">{comment.owner.name}</span>
               <span className="text-sm">{timeAgo(comment.createdAt)}</span>
             </div>
-            <Ellipsis className="size-5 hidden group-hover:block cursor-pointer" />
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Ellipsis className="size-5 hidden group-hover:block cursor-pointer" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem className="cursor-pointer">
+                  <EditIcon className="size-5 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => handleDeleteComment(comment.id)}
+                  className="cursor-pointer"
+                >
+                  <Trash2 className="size-5 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <p className="mt-2 ml-1 text-lg">{comment.value}</p>
         </div>
