@@ -5,6 +5,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import IssueSidebarMenu from "./issue-sidebar-menu";
 import RenameIssueButton from "./rename-issue-button";
 import MainContent from "./main-content";
+import AddCommentForm from "./add-comment-form";
+import { getAllComments } from "@/actions/comment";
+import CommentsList from "./comments-list";
 
 const IssuePage = async ({
   params,
@@ -14,6 +17,7 @@ const IssuePage = async ({
   const { workspaceId, issueId } = params;
 
   const issue = await getIssueById({ workspaceId, issueId });
+  const comments = await getAllComments({ issueId });
 
   return (
     <div className="w-full h-full flex">
@@ -33,8 +37,12 @@ const IssuePage = async ({
             <IssueSidebarMenu issue={issue} workspaceId={workspaceId} />
           </div>
         </nav>
-        <ScrollArea className="w-full h-full">
+        <ScrollArea className="w-full h-full p-4">
           <MainContent issue={issue} workspaceId={workspaceId} />
+          <div className="w-full h-[1px] bg-slate-600 mt-10" />
+          <h1 className="mt-4 text-bold text-3xl">Comments</h1>
+          <CommentsList comments={comments} />
+          <AddCommentForm issueId={issue.id} />
         </ScrollArea>
       </div>
       <IssueSidebar issue={issue} workspaceId={workspaceId} />

@@ -38,6 +38,7 @@ model User {
   workspaces       Workspace[] @relation("workspaceOwner")
   joinedWorkspaces Workspace[] @relation("workspaceMember")
   issues           Issue[]
+  comments         Comment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -96,6 +97,21 @@ model Issue {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   assignedTo String[]
+  comments   Comment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id    String @id @default(cuid())
+  value String
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  issueId String
+  issue   Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

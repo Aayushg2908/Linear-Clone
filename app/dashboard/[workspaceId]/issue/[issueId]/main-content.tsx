@@ -46,7 +46,7 @@ const MainContent = ({
   };
 
   return (
-    <main className="w-full h-full p-4 flex flex-col gap-y-4">
+    <main className="w-full h-full flex flex-col gap-y-4">
       <Button
         onClick={handleContentSave}
         disabled={content === issue.content || isLoading}
