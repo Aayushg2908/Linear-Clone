@@ -111,7 +111,7 @@ const IssueSidebar = ({
               onSelect={() => handleStatusSelect(issue.id, iss.type)}
             >
               <span className="flex gap-x-2 items-center">
-                <Icon
+                <iss.Icon
                   className={cn(
                     "size-4 text-white rounded-full",
                     iss.type === "DONE" && "bg-green-600 ",
