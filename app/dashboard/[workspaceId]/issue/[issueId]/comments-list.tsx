@@ -15,6 +15,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 import AddCommentForm from "./add-comment-form";
+import { useSession } from "next-auth/react";
 
 interface CommentsListProps {
   comments: (Comment & {
@@ -24,6 +25,7 @@ interface CommentsListProps {
 
 const CommentsList = ({ comments }: CommentsListProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const { data } = useSession();
 
   const handleDeleteComment = async (id: string) => {
     try {
@@ -64,28 +66,30 @@ const CommentsList = ({ comments }: CommentsListProps) => {
               <span className="font-bold text-sm">{comment.owner.name}</span>
               <span className="text-sm">{timeAgo(comment.createdAt)}</span>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Ellipsis className="size-5 hidden group-hover:block cursor-pointer" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  onSelect={() => setIsEditing(true)}
-                  className="cursor-pointer"
-                >
-                  <EditIcon className="size-5 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={() => handleDeleteComment(comment.id)}
-                  className="cursor-pointer"
-                >
-                  <Trash2 className="size-5 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {data?.user?.id === comment.ownerId && (
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <Ellipsis className="size-5 hidden group-hover:block cursor-pointer" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onSelect={() => setIsEditing(true)}
+                    className="cursor-pointer"
+                  >
+                    <EditIcon className="size-5 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => handleDeleteComment(comment.id)}
+                    className="cursor-pointer"
+                  >
+                    <Trash2 className="size-5 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
           {isEditing ? (
             <AddCommentForm

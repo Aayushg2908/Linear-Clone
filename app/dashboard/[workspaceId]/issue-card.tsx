@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteIssue, updateIssue } from "@/actions/issue";
+import { assignIssue, deleteIssue, updateIssue } from "@/actions/issue";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +33,7 @@ import { IssueLabel, Issues } from "@/constants";
 import { useCreateIssue } from "@/hooks/use-create-issue";
 import { useRenameIssue } from "@/hooks/use-rename-issue";
 import { cn } from "@/lib/utils";
-import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
+import { ISSUELABEL, ISSUETYPE, Issue, User } from "@prisma/client";
 import {
   CheckIcon,
   CirclePlay,
@@ -42,12 +42,15 @@ import {
   PlusIcon,
   Tag,
   Trash2,
+  UserCircle,
+  UserCircleIcon,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import Link from "next/link";
+import Image from "next/image";
 
 interface IssueCardProps {
   issues: {
@@ -57,9 +60,10 @@ interface IssueCardProps {
     DONE: Issue[];
     CANCELLED: Issue[];
   };
+  members: User[];
 }
 
-export const IssueCard = ({ issues }: IssueCardProps) => {
+export const IssueCard = ({ issues, members }: IssueCardProps) => {
   const { onOpen } = useCreateIssue();
   const { onOpen: onRenameOpen } = useRenameIssue();
   const params = useParams();
@@ -121,6 +125,43 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
         toast.error(response.error);
       } else if (response.success) {
         toast.success("Issue deleted successfully.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleIssueAssign = async ({
+    userId,
+    issueId,
+    name,
+    type,
+  }: {
+    userId: string;
+    issueId: string;
+    name: string;
+    type: "ASSIGN" | "REMOVE";
+  }) => {
+    try {
+      toast.loading(
+        `${type === "ASSIGN" ? "Assigning" : "Unassigning"} issue...`
+      );
+      const response = await assignIssue({
+        userId,
+        issueId,
+        workspaceId: params.workspaceId as string,
+        type,
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        if (type === "ASSIGN") {
+          toast.success(`Issue assigned to ${name} successfully.`);
+        } else if (type === "REMOVE") {
+          toast.success(`Issue unassigned from ${name} successfully.`);
+        }
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -472,6 +513,57 @@ export const IssueCard = ({ issues }: IssueCardProps) => {
                                       {label.name}
                                       {label.type === iss.label && (
                                         <CheckIcon className="size-4 text-green-600 ml-2" />
+                                      )}
+                                    </ContextMenuItem>
+                                  ))}
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <UserCircle className="size-4 mr-1" />
+                                  Assign To
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  {members.map((member) => (
+                                    <ContextMenuItem
+                                      key={member.id}
+                                      className="cursor-pointer flex items-center gap-x-1"
+                                      onSelect={() => {
+                                        if (
+                                          iss.assignedTo.includes(member.id)
+                                        ) {
+                                          handleIssueAssign({
+                                            userId: member.id,
+                                            issueId: iss.id,
+                                            name: member.name!,
+                                            type: "REMOVE",
+                                          });
+                                        } else {
+                                          handleIssueAssign({
+                                            userId: member.id,
+                                            issueId: iss.id,
+                                            name: member.name!,
+                                            type: "ASSIGN",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      {member.image ? (
+                                        <Image
+                                          src={member.image}
+                                          alt="user-image"
+                                          width={30}
+                                          height={30}
+                                          className="size-4 rounded-full"
+                                        />
+                                      ) : (
+                                        <UserCircleIcon className="size-4 rounded-full text-slate-300" />
+                                      )}
+                                      <span className="text-sm">
+                                        {member.name}
+                                      </span>
+                                      {iss.assignedTo.includes(member.id) && (
+                                        <CheckIcon className="size-4 text-green-600" />
                                       )}
                                     </ContextMenuItem>
                                   ))}

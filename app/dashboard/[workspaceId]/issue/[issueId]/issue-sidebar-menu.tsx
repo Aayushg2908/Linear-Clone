@@ -2,13 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
+import { ISSUELABEL, ISSUETYPE, Issue, User } from "@prisma/client";
 import {
   CheckIcon,
   CircleUserRound,
   MenuIcon,
   PlusIcon,
   Trash2,
+  UserCircleIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,19 +30,22 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { updateIssue, deleteIssue } from "@/actions/issue";
+import { updateIssue, deleteIssue, assignIssue } from "@/actions/issue";
 import { IssueLabel, Issues } from "@/constants";
 import { getIconIndex } from "./issue-sidebar";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const IssueSidebarMenu = ({
   issue,
   workspaceId,
+  members,
 }: {
   issue: Issue;
   workspaceId: string;
+  members: User[];
 }) => {
   const Icon = Issues[getIconIndex(issue.status)].Icon;
   const [isMounted, setIsMounted] = useState(false);
@@ -87,6 +91,43 @@ const IssueSidebarMenu = ({
         toast.error(response.error);
       } else if (response.success) {
         toast.success("Issue label updated successfully.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleIssueAssign = async ({
+    userId,
+    issueId,
+    name,
+    type,
+  }: {
+    userId: string;
+    issueId: string;
+    name: string;
+    type: "ASSIGN" | "REMOVE";
+  }) => {
+    try {
+      toast.loading(
+        `${type === "ASSIGN" ? "Assigning" : "Unassigning"} issue...`
+      );
+      const response = await assignIssue({
+        userId,
+        issueId,
+        workspaceId,
+        type,
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        if (type === "ASSIGN") {
+          toast.success(`Issue assigned to ${name} successfully.`);
+        } else if (type === "REMOVE") {
+          toast.success(`Issue unassigned from ${name} successfully.`);
+        }
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -209,9 +250,49 @@ const IssueSidebarMenu = ({
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-x-2 w-fit">
             <CircleUserRound className="size-5" />
-            Assign
+            Assign To
           </DropdownMenuTrigger>
-          <DropdownMenuContent>Yet to be done</DropdownMenuContent>
+          <DropdownMenuContent>
+            {members.map((member) => (
+              <DropdownMenuItem
+                key={member.id}
+                className="cursor-pointer flex items-center gap-x-1"
+                onSelect={() => {
+                  if (issue.assignedTo.includes(member.id)) {
+                    handleIssueAssign({
+                      userId: member.id,
+                      issueId: issue.id,
+                      name: member.name!,
+                      type: "REMOVE",
+                    });
+                  } else {
+                    handleIssueAssign({
+                      userId: member.id,
+                      issueId: issue.id,
+                      name: member.name!,
+                      type: "ASSIGN",
+                    });
+                  }
+                }}
+              >
+                {member.image ? (
+                  <Image
+                    src={member.image}
+                    alt="user-image"
+                    width={30}
+                    height={30}
+                    className="size-4 rounded-full"
+                  />
+                ) : (
+                  <UserCircleIcon className="size-4 rounded-full text-slate-300" />
+                )}
+                <span className="text-sm">{member.name}</span>
+                {issue.assignedTo.includes(member.id) && (
+                  <CheckIcon className="size-4 text-green-600" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
         </DropdownMenu>
         <AlertDialog>
           <AlertDialogTrigger asChild>

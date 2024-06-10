@@ -8,6 +8,7 @@ import MainContent from "./main-content";
 import AddCommentForm from "./add-comment-form";
 import { getAllComments } from "@/actions/comment";
 import CommentsList from "./comments-list";
+import { getWorkspace } from "@/actions/workspace";
 
 const IssuePage = async ({
   params,
@@ -18,6 +19,7 @@ const IssuePage = async ({
 
   const issue = await getIssueById({ workspaceId, issueId });
   const comments = await getAllComments({ issueId });
+  const workspace = await getWorkspace({ workspaceId });
 
   return (
     <div className="w-full h-full flex">
@@ -34,7 +36,11 @@ const IssuePage = async ({
             />
           </div>
           <div className="md:hidden">
-            <IssueSidebarMenu issue={issue} workspaceId={workspaceId} />
+            <IssueSidebarMenu
+              issue={issue}
+              workspaceId={workspaceId}
+              members={workspace.members}
+            />
           </div>
         </nav>
         <ScrollArea className="w-full h-full p-4">
@@ -45,7 +51,11 @@ const IssuePage = async ({
           <AddCommentForm issueId={issue.id} />
         </ScrollArea>
       </div>
-      <IssueSidebar issue={issue} workspaceId={workspaceId} />
+      <IssueSidebar
+        issue={issue}
+        workspaceId={workspaceId}
+        members={workspace.members}
+      />
     </div>
   );
 };

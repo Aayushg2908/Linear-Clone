@@ -2,6 +2,7 @@ import { SheetMenu } from "./sheet-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueCard } from "./issue-card";
 import { getAllIssues } from "@/actions/issue";
+import { getWorkspace } from "@/actions/workspace";
 
 const WorkspacePage = async ({
   params,
@@ -11,6 +12,7 @@ const WorkspacePage = async ({
   const { workspaceId } = params;
 
   const issues = await getAllIssues({ workspaceId });
+  const workspace = await getWorkspace({ workspaceId });
 
   const backlogIssues = issues.filter((issue) => issue.status === "BACKLOG");
   const todoIssues = issues.filter((issue) => issue.status === "TODO");
@@ -39,7 +41,7 @@ const WorkspacePage = async ({
         </div>
       </nav>
       <ScrollArea className="w-full h-full">
-        <IssueCard issues={finalIssues} />
+        <IssueCard issues={finalIssues} members={workspace.members} />
       </ScrollArea>
     </div>
   );

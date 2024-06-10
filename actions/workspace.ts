@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { WorkspaceSchema } from "@/lib/schema";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 
 export const createWorkspace = async (
@@ -39,4 +39,29 @@ export const createWorkspace = async (
   revalidatePath("/dashboard/[workspaceId]", "layout");
 
   return { id: workspace.id };
+};
+
+export const getWorkspace = async ({
+  workspaceId,
+}: {
+  workspaceId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const workspace = await db.workspace.findUnique({
+    where: {
+      id: workspaceId,
+    },
+    select: {
+      members: true,
+    },
+  });
+  if (!workspace) {
+    return notFound();
+  }
+
+  return workspace;
 };

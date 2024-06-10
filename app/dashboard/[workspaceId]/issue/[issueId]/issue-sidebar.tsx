@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteIssue, updateIssue } from "@/actions/issue";
+import { assignIssue, deleteIssue, updateIssue } from "@/actions/issue";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,8 +22,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { IssueLabel, Issues } from "@/constants";
 import { cn } from "@/lib/utils";
-import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
-import { CheckIcon, CircleUserRound, PlusIcon, Trash2 } from "lucide-react";
+import { ISSUELABEL, ISSUETYPE, Issue, User } from "@prisma/client";
+import {
+  CheckIcon,
+  CircleUserRound,
+  PlusIcon,
+  Trash2,
+  UserCircleIcon,
+} from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -47,9 +54,11 @@ export const getIconIndex = (status: ISSUETYPE) => {
 const IssueSidebar = ({
   issue,
   workspaceId,
+  members,
 }: {
   issue: Issue;
   workspaceId: string;
+  members: User[];
 }) => {
   const Icon = Issues[getIconIndex(issue.status)].Icon;
   const router = useRouter();
@@ -110,6 +119,43 @@ const IssueSidebar = ({
       } else if (response.success) {
         toast.success("Issue deleted successfully.");
         router.push(`/dashboard/${workspaceId}`);
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleIssueAssign = async ({
+    userId,
+    issueId,
+    name,
+    type,
+  }: {
+    userId: string;
+    issueId: string;
+    name: string;
+    type: "ASSIGN" | "REMOVE";
+  }) => {
+    try {
+      toast.loading(
+        `${type === "ASSIGN" ? "Assigning" : "Unassigning"} issue...`
+      );
+      const response = await assignIssue({
+        userId,
+        issueId,
+        workspaceId,
+        type,
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        if (type === "ASSIGN") {
+          toast.success(`Issue assigned to ${name} successfully.`);
+        } else if (type === "REMOVE") {
+          toast.success(`Issue unassigned from ${name} successfully.`);
+        }
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -204,9 +250,49 @@ const IssueSidebar = ({
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-x-2 w-fit">
           <CircleUserRound className="size-5" />
-          Assign
+          Assign To
         </DropdownMenuTrigger>
-        <DropdownMenuContent>Yet to be done</DropdownMenuContent>
+        <DropdownMenuContent>
+          {members.map((member) => (
+            <DropdownMenuItem
+              key={member.id}
+              className="cursor-pointer flex items-center gap-x-1"
+              onSelect={() => {
+                if (issue.assignedTo.includes(member.id)) {
+                  handleIssueAssign({
+                    userId: member.id,
+                    issueId: issue.id,
+                    name: member.name!,
+                    type: "REMOVE",
+                  });
+                } else {
+                  handleIssueAssign({
+                    userId: member.id,
+                    issueId: issue.id,
+                    name: member.name!,
+                    type: "ASSIGN",
+                  });
+                }
+              }}
+            >
+              {member.image ? (
+                <Image
+                  src={member.image}
+                  alt="user-image"
+                  width={30}
+                  height={30}
+                  className="size-4 rounded-full"
+                />
+              ) : (
+                <UserCircleIcon className="size-4 rounded-full text-slate-300" />
+              )}
+              <span className="text-sm">{member.name}</span>
+              {issue.assignedTo.includes(member.id) && (
+                <CheckIcon className="size-4 text-green-600" />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog>
         <AlertDialogTrigger asChild>

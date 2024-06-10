@@ -184,3 +184,67 @@ export const getIssueById = async ({
 
   return issue;
 };
+
+export const assignIssue = async ({
+  issueId,
+  userId,
+  workspaceId,
+  type,
+}: {
+  issueId: string;
+  userId: string;
+  workspaceId: string;
+  type: "ASSIGN" | "REMOVE";
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const issue = await db.issue.findUnique({
+    where: {
+      id: issueId,
+      workspaceId,
+    },
+  });
+  if (!issue) {
+    return { error: "Issue not found" };
+  }
+
+  if (issue.ownerId === session.user.id) {
+    if (type === "ASSIGN") {
+      await db.issue.update({
+        where: {
+          id: issueId,
+        },
+        data: {
+          assignedTo: {
+            push: userId,
+          },
+        },
+      });
+      revalidatePath(`/dashboard/${workspaceId}`);
+      revalidatePath(`/dashboard/${workspaceId}/issue/${issueId}`);
+
+      return { success: "Issue assigned successfully!" };
+    } else if (type === "REMOVE") {
+      await db.issue.update({
+        where: {
+          id: issueId,
+        },
+        data: {
+          assignedTo: {
+            set: issue.assignedTo.filter((id) => id !== userId),
+          },
+        },
+      });
+
+      revalidatePath(`/dashboard/${workspaceId}`);
+      revalidatePath(`/dashboard/${workspaceId}/issue/${issueId}`);
+
+      return { success: "Issue unassigned successfully!" };
+    }
+  }
+
+  return { error: "You do not have the permission to do this action!" };
+};
