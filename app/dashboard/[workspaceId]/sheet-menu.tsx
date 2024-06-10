@@ -47,6 +47,7 @@ export const SheetMenu = async ({ workspaceId }: { workspaceId: string }) => {
           workspaceId={workspaceId}
           workspaceName={workspace.name}
           joinedWorkspaces={user.joinedWorkspaces}
+          inviteCode={workspace.inviteCode}
           width="w-[200px] sm:w-[330px]"
         />
         <Tabs workspaceId={workspaceId} />

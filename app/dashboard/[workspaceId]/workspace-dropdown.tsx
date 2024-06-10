@@ -26,11 +26,13 @@ import { CheckIcon, ChevronsUpDown, PlusIcon } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type Props = {
   workspaceId: string;
   workspaceName: string;
   joinedWorkspaces: Workspace[];
+  inviteCode: string;
   width: string;
 };
 
@@ -38,6 +40,7 @@ export const WorkspaceDropdown = ({
   workspaceId,
   workspaceName,
   joinedWorkspaces,
+  inviteCode,
   width,
 }: Props) => {
   const router = useRouter();
@@ -96,6 +99,17 @@ export const WorkspaceDropdown = ({
                 </Command>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
+            <DropdownMenuItem
+              onSelect={() => {
+                navigator.clipboard.writeText(
+                  `${process.env.NEXT_PUBLIC_APP_URL}/invite/${inviteCode}`
+                );
+                toast.success("Invite link copied to clipboard.");
+              }}
+              className="cursor-pointer"
+            >
+              Copy Invite Link
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer"

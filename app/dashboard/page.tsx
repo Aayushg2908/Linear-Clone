@@ -13,11 +13,23 @@ const DashboardPage = async () => {
       ownerId: session.user.id,
     },
   });
-  if (!existingWorkspace) {
-    return redirect("/dashboard/join");
+  const joinedWorkspace = await db.workspace.findFirst({
+    where: {
+      members: {
+        some: {
+          id: session.user.id,
+        },
+      },
+    },
+  });
+
+  if (existingWorkspace) {
+    return redirect(`/dashboard/${existingWorkspace.id}`);
+  } else if (joinedWorkspace) {
+    return redirect(`/dashboard/${joinedWorkspace.id}`);
   }
 
-  return redirect(`/dashboard/${existingWorkspace.id}`);
+  return redirect("/dashboard/join");
 };
 
 export default DashboardPage;

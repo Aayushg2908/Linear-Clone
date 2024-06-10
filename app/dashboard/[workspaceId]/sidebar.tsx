@@ -37,6 +37,7 @@ export const Sidebar = async ({ workspaceId }: { workspaceId: string }) => {
         workspaceId={workspaceId}
         workspaceName={workspace.name}
         joinedWorkspaces={user.joinedWorkspaces}
+        inviteCode={workspace.inviteCode}
         width="w-[190px]"
       />
       <Tabs workspaceId={workspaceId} />
