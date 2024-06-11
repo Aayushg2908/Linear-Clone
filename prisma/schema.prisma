@@ -39,6 +39,7 @@ model User {
   joinedWorkspaces Workspace[] @relation("workspaceMember")
   issues           Issue[]
   comments         Comment[]
+  projects         Project[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,8 +62,9 @@ model Workspace {
   ownerId String
   owner   User   @relation("workspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  members User[]  @relation("workspaceMember")
-  issues  Issue[]
+  members  User[]    @relation("workspaceMember")
+  issues   Issue[]
+  projects Project[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -112,6 +114,43 @@ model Comment {
 
   issueId String
   issue   Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PROJECTTYPE {
+  BACKLOG
+  PLANNED
+  INPROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PROJECTLABEL {
+  IMPROVEMENT
+  BUG
+  FEATURE
+}
+
+model Project {
+  id        String        @id @default(cuid())
+  title     String
+  content   String
+  status    PROJECTTYPE   @default(PLANNED)
+  label     PROJECTLABEL?
+  order     Int
+  startDate DateTime?
+  endDate   DateTime?
+  lead      String?
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  members String[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

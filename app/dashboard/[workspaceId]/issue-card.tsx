@@ -317,6 +317,9 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                     )}
                   />
                   <span className="font-bold">{issue.name}</span>
+                  <span className="text-muted-foreground">
+                    {issues[issue.type].length}
+                  </span>
                 </span>
                 <Button
                   onClick={() => onOpen(issue.type)}
