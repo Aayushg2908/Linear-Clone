@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { PROJECTTYPE } from "@prisma/client";
+import { PROJECTLABEL, PROJECTTYPE } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -47,5 +47,79 @@ export const createProject = async ({
     },
   });
 
-  revalidatePath(`/dashboard/${workspaceId}`);
+  revalidatePath(`/dashboard/${workspaceId}/projects`);
+};
+
+export const getAllProjects = async ({
+  workspaceId,
+}: {
+  workspaceId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  return db.project.findMany({
+    where: {
+      workspaceId,
+    },
+    orderBy: {
+      order: "asc",
+    },
+  });
+};
+
+export const updateProject = async ({
+  id,
+  workspaceId,
+  values,
+}: {
+  id: string;
+  workspaceId: string;
+  values: {
+    title?: string;
+    summary?: string;
+    content?: string;
+    status?: PROJECTTYPE;
+    order?: number;
+    label?: PROJECTLABEL | null;
+    startDate?: Date;
+    endDate?: Date;
+    lead?: string | null;
+  };
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const project = await db.project.findUnique({
+    where: {
+      id,
+      workspaceId,
+    },
+  });
+  if (!project) {
+    return { error: "Project not found" };
+  }
+
+  if (project.ownerId !== session.user.id) {
+    return { error: "You do not have the permission to do this action!" };
+  }
+
+  await db.project.update({
+    where: {
+      id,
+      workspaceId,
+    },
+    data: {
+      ...values,
+    },
+  });
+
+  revalidatePath(`/dashboard/${workspaceId}/projects`);
+  revalidatePath(`/dashboard/${workspaceId}/projects/${id}`);
+
+  return { success: "Project status updated successfully!" };
 };
