@@ -42,7 +42,10 @@ import {
   SquarePlay,
   Tag,
   Trash2,
+  UserCircleIcon,
+  UserRoundCog,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -121,6 +124,46 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
         toast.error(response.error);
       } else if (response.success) {
         toast.success("Project label updated successfully.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleProjectLead = async ({
+    userId,
+    projectId,
+    name,
+    type,
+  }: {
+    userId: string;
+    projectId: string;
+    name: string;
+    type: "ASSIGN" | "REMOVE";
+  }) => {
+    try {
+      toast.loading(
+        type === "ASSIGN"
+          ? `Assigning ${name} as the project lead...`
+          : `Removing ${name} from the project lead...`
+      );
+      const response = await updateProject({
+        id: projectId,
+        workspaceId: params.workspaceId as string,
+        values: {
+          lead: type === "ASSIGN" ? userId : null,
+        },
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success(
+          `${name} ${
+            type === "ASSIGN" ? "assigned" : "removed"
+          } as the project lead successfully.`
+        );
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -326,6 +369,52 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                             {label.name}
                             {label.type === pro.label && (
                               <CheckIcon className="size-4 text-green-600 ml-2" />
+                            )}
+                          </ContextMenuItem>
+                        ))}
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger className="cursor-pointer">
+                        <UserRoundCog className="size-4 mr-1" /> Lead
+                      </ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        {members.map((member) => (
+                          <ContextMenuItem
+                            key={member.id}
+                            className="cursor-pointer flex items-center gap-x-1"
+                            onSelect={() => {
+                              if (pro.lead && pro.lead === member.id) {
+                                handleProjectLead({
+                                  userId: member.id,
+                                  projectId: pro.id,
+                                  name: member.name!,
+                                  type: "REMOVE",
+                                });
+                              } else {
+                                handleProjectLead({
+                                  userId: member.id,
+                                  projectId: pro.id,
+                                  name: member.name!,
+                                  type: "ASSIGN",
+                                });
+                              }
+                            }}
+                          >
+                            {member.image ? (
+                              <Image
+                                src={member.image}
+                                alt="user-image"
+                                width={30}
+                                height={30}
+                                className="size-4 rounded-full"
+                              />
+                            ) : (
+                              <UserCircleIcon className="size-4 rounded-full text-slate-300" />
+                            )}
+                            <span className="text-sm">{member.name}</span>
+                            {pro.lead === member.id && (
+                              <CheckIcon className="size-4 text-green-600" />
                             )}
                           </ContextMenuItem>
                         ))}

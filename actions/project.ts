@@ -104,24 +104,28 @@ export const updateProject = async ({
     return { error: "Project not found" };
   }
 
-  if (project.ownerId !== session.user.id) {
-    return { error: "You do not have the permission to do this action!" };
+  if (
+    project.ownerId === session.user.id ||
+    project.lead === session.user.id ||
+    project.members.includes(session.user.id!)
+  ) {
+    await db.project.update({
+      where: {
+        id,
+        workspaceId,
+      },
+      data: {
+        ...values,
+      },
+    });
+
+    revalidatePath(`/dashboard/${workspaceId}/projects`);
+    revalidatePath(`/dashboard/${workspaceId}/projects/${id}`);
+
+    return { success: "Project status updated successfully!" };
   }
 
-  await db.project.update({
-    where: {
-      id,
-      workspaceId,
-    },
-    data: {
-      ...values,
-    },
-  });
-
-  revalidatePath(`/dashboard/${workspaceId}/projects`);
-  revalidatePath(`/dashboard/${workspaceId}/projects/${id}`);
-
-  return { success: "Project status updated successfully!" };
+  return { error: "You do not have the permission to do this action!" };
 };
 
 export const deleteProject = async ({
@@ -146,17 +150,17 @@ export const deleteProject = async ({
     return { error: "Project not found" };
   }
 
-  if (project.ownerId !== session.user.id) {
-    return { error: "You do not have the permission to do this action!" };
+  if (project.ownerId === session.user.id || project.lead === session.user.id) {
+    await db.project.delete({
+      where: {
+        id,
+      },
+    });
+
+    revalidatePath(`/dashboard/${workspaceId}/projects`);
+
+    return { success: "Project deleted successfully!" };
   }
 
-  await db.project.delete({
-    where: {
-      id,
-    },
-  });
-
-  revalidatePath(`/dashboard/${workspaceId}/projects`);
-
-  return { success: "Project deleted successfully!" };
+  return { error: "You do not have the permission to do this action!" };
 };
