@@ -17,6 +17,9 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
@@ -30,7 +33,14 @@ import { useCreateProject } from "@/hooks/use-create-project";
 import { useRenameProject } from "@/hooks/use-rename-project";
 import { cn } from "@/lib/utils";
 import { PROJECTTYPE, Project, User } from "@prisma/client";
-import { CheckIcon, Edit, Grip, PlusIcon, Trash2 } from "lucide-react";
+import {
+  CheckIcon,
+  Edit,
+  Grip,
+  PlusIcon,
+  SquarePlay,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -197,6 +207,39 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                     </div>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger className="cursor-pointer">
+                        <SquarePlay className="size-4 mr-1" /> Status
+                      </ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        {Projects.map((project) => (
+                          <ContextMenuItem
+                            key={project.type}
+                            onSelect={() =>
+                              handleStatusSelect(pro.id, project.type)
+                            }
+                            className="cursor-pointer"
+                          >
+                            <span className="flex gap-x-2 items-center">
+                              <project.Icon
+                                className={cn(
+                                  "size-4 text-white rounded-full",
+                                  project.type === "COMPLETED" &&
+                                    "bg-green-600 ",
+                                  project.type === "INPROGRESS" &&
+                                    "bg-yellow-600",
+                                  project.type === "CANCELLED" && "bg-red-600"
+                                )}
+                              />
+                              {project.name}
+                            </span>
+                            {project.type === pro.status && (
+                              <CheckIcon className="ml-1 size-4 text-green-600" />
+                            )}
+                          </ContextMenuItem>
+                        ))}
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
                     <ContextMenuItem
                       onSelect={() =>
                         onRenameOpen(
