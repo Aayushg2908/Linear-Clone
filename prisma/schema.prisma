@@ -136,6 +136,7 @@ enum PROJECTLABEL {
 model Project {
   id        String        @id @default(cuid())
   title     String
+  summary   String
   content   String
   status    PROJECTTYPE   @default(PLANNED)
   label     PROJECTLABEL?

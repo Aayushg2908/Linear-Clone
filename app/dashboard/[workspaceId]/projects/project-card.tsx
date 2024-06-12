@@ -2,10 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Projects } from "@/constants";
+import { useCreateProject } from "@/hooks/use-create-project";
 import { cn } from "@/lib/utils";
 import { PlusIcon } from "lucide-react";
 
 const ProjectCard = () => {
+  const { onOpen } = useCreateProject();
+
   return (
     <div className="mt-4 w-full flex flex-col sm:flex-row gap-4 sm:flex-wrap p-2 justify-center">
       {Projects.map((project) => (
@@ -25,12 +28,21 @@ const ProjectCard = () => {
               />
               <span className="font-bold">{project.name}</span>
             </span>
-            <Button size="icon" variant="ghost">
+            <Button
+              onClick={() => onOpen(project.type)}
+              size="icon"
+              variant="ghost"
+            >
               <PlusIcon className="size-5" />
             </Button>
           </div>
           <ol className="w-full flex flex-col gap-y-1 p-2">
-            <Button size="icon" variant="secondary" className="w-full mt-4">
+            <Button
+              onClick={() => onOpen(project.type)}
+              size="icon"
+              variant="secondary"
+              className="w-full mt-4"
+            >
               <PlusIcon className="size-5" />
             </Button>
           </ol>

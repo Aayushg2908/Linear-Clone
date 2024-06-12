@@ -35,3 +35,15 @@ export const IssueSchema = z.object({
     message: "Minimum 1 character required",
   }),
 });
+
+export const ProjectSchema = z.object({
+  title: z.string().min(1, {
+    message: "Minimum 1 character required",
+  }),
+  summary: z.string().min(5, {
+    message: "Minimum 5 character required",
+  }),
+  content: z.string().min(1, {
+    message: "Minimum 1 character required",
+  }),
+});
