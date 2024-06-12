@@ -164,3 +164,63 @@ export const deleteProject = async ({
 
   return { error: "You do not have the permission to do this action!" };
 };
+
+export const addMember = async ({
+  userId,
+  projectId,
+  workspaceId,
+  type,
+}: {
+  projectId: string;
+  userId: string;
+  workspaceId: string;
+  type: "ASSIGN" | "REMOVE";
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const project = await db.project.findUnique({
+    where: {
+      id: projectId,
+      workspaceId,
+    },
+  });
+  if (!project) {
+    return { error: "Project not found" };
+  }
+
+  if (project.ownerId === session.user.id || project.lead === session.user.id) {
+    if (type === "ASSIGN") {
+      await db.project.update({
+        where: {
+          id: projectId,
+        },
+        data: {
+          members: {
+            push: userId,
+          },
+        },
+      });
+    } else {
+      await db.project.update({
+        where: {
+          id: projectId,
+        },
+        data: {
+          members: {
+            set: project.members.filter((member) => member !== userId),
+          },
+        },
+      });
+    }
+
+    revalidatePath(`/dashboard/${workspaceId}/projects`);
+    revalidatePath(`/dashboard/${workspaceId}/projects/${projectId}`);
+
+    return { success: "Member updated successfully!" };
+  }
+
+  return { error: "You do not have the permission to do this action!" };
+};

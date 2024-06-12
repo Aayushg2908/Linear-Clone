@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteProject, updateProject } from "@/actions/project";
+import { addMember, deleteProject, updateProject } from "@/actions/project";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +44,7 @@ import {
   Trash2,
   UserCircleIcon,
   UserRoundCog,
+  Users,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -163,6 +164,45 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
           `${name} ${
             type === "ASSIGN" ? "assigned" : "removed"
           } as the project lead successfully.`
+        );
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleAddMember = async ({
+    userId,
+    projectId,
+    name,
+    type,
+  }: {
+    userId: string;
+    projectId: string;
+    name: string;
+    type: "ASSIGN" | "REMOVE";
+  }) => {
+    try {
+      toast.loading(
+        type === "ASSIGN"
+          ? `Adding ${name} to the project...`
+          : `Removing ${name} from the project...`
+      );
+      const response = await addMember({
+        userId,
+        projectId,
+        workspaceId: params.workspaceId as string,
+        type,
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success(
+          type === "ASSIGN"
+            ? `${name} added to the project successfully`
+            : `${name} removed from the project successfully`
         );
       }
     } catch (error) {
@@ -414,6 +454,52 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                             )}
                             <span className="text-sm">{member.name}</span>
                             {pro.lead === member.id && (
+                              <CheckIcon className="size-4 text-green-600" />
+                            )}
+                          </ContextMenuItem>
+                        ))}
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger className="cursor-pointer">
+                        <Users className="size-4 mr-1" /> Members
+                      </ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        {members.map((member) => (
+                          <ContextMenuItem
+                            key={member.id}
+                            className="cursor-pointer flex items-center gap-x-1"
+                            onSelect={() => {
+                              if (pro.members.includes(member.id)) {
+                                handleAddMember({
+                                  userId: member.id,
+                                  projectId: pro.id,
+                                  name: member.name!,
+                                  type: "REMOVE",
+                                });
+                              } else {
+                                handleAddMember({
+                                  userId: member.id,
+                                  projectId: pro.id,
+                                  name: member.name!,
+                                  type: "ASSIGN",
+                                });
+                              }
+                            }}
+                          >
+                            {member.image ? (
+                              <Image
+                                src={member.image}
+                                alt="user-image"
+                                width={30}
+                                height={30}
+                                className="size-4 rounded-full"
+                              />
+                            ) : (
+                              <UserCircleIcon className="size-4 rounded-full text-slate-300" />
+                            )}
+                            <span className="text-sm">{member.name}</span>
+                            {pro.members.includes(member.id) && (
                               <CheckIcon className="size-4 text-green-600" />
                             )}
                           </ContextMenuItem>
