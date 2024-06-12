@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
@@ -28,17 +29,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Projects } from "@/constants";
+import { ProjectLabel, Projects } from "@/constants";
 import { useCreateProject } from "@/hooks/use-create-project";
 import { useRenameProject } from "@/hooks/use-rename-project";
 import { cn } from "@/lib/utils";
-import { PROJECTTYPE, Project, User } from "@prisma/client";
+import { PROJECTLABEL, PROJECTTYPE, Project, User } from "@prisma/client";
 import {
   CheckIcon,
   Edit,
   Grip,
   PlusIcon,
   SquarePlay,
+  Tag,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -97,6 +99,28 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
         toast.error(response.error);
       } else if (response.success) {
         toast.success("Project deleted successfully.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleLabelSelect = async (id: string, label: PROJECTLABEL | null) => {
+    try {
+      toast.loading("Updating project label...");
+      const response = await updateProject({
+        id,
+        workspaceId: params.workspaceId as string,
+        values: {
+          label,
+        },
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success("Project label updated successfully.");
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -196,6 +220,47 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                         <span className="text-sm text-muted-foreground">
                           {pro.summary}
                         </span>
+                        {pro.label && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger>
+                              <Badge
+                                variant="secondary"
+                                className="flex items-center gap-x-1 w-fit mt-1"
+                              >
+                                <div
+                                  className={cn(
+                                    "size-3 rounded-full",
+                                    pro.label === "BUG" && "bg-red-600",
+                                    pro.label === "FEATURE" && "bg-purple-600",
+                                    pro.label === "IMPROVEMENT" && "bg-blue-600"
+                                  )}
+                                />
+                                {pro.label}
+                              </Badge>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {ProjectLabel.map((label) => (
+                                <DropdownMenuItem
+                                  key={label.type}
+                                  className="cursor-pointer"
+                                  onSelect={() => {
+                                    if (pro.label !== label.type) {
+                                      handleLabelSelect(pro.id, label.type);
+                                    } else {
+                                      handleLabelSelect(pro.id, null);
+                                    }
+                                  }}
+                                >
+                                  <span className={label.className} />
+                                  {label.name}
+                                  {label.type === pro.label && (
+                                    <CheckIcon className="size-4 text-green-600 ml-2" />
+                                  )}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                       <Button
                         size="icon"
@@ -235,6 +300,32 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                             </span>
                             {project.type === pro.status && (
                               <CheckIcon className="ml-1 size-4 text-green-600" />
+                            )}
+                          </ContextMenuItem>
+                        ))}
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger className="cursor-pointer">
+                        <Tag className="size-4 mr-1" /> Label
+                      </ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        {ProjectLabel.map((label) => (
+                          <ContextMenuItem
+                            key={label.type}
+                            className="cursor-pointer"
+                            onClick={() => {
+                              if (pro.label !== label.type) {
+                                handleLabelSelect(pro.id, label.type);
+                              } else {
+                                handleLabelSelect(pro.id, null);
+                              }
+                            }}
+                          >
+                            <span className={label.className} />
+                            {label.name}
+                            {label.type === pro.label && (
+                              <CheckIcon className="size-4 text-green-600 ml-2" />
                             )}
                           </ContextMenuItem>
                         ))}

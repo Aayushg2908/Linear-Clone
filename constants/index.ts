@@ -114,3 +114,27 @@ export const Projects: ProjectsType[] = [
     Icon: SquareX,
   },
 ];
+
+interface ProjectLabelType {
+  name: string;
+  type: ISSUELABEL;
+  className: string;
+}
+
+export const ProjectLabel: ProjectLabelType[] = [
+  {
+    name: "Bug",
+    type: "BUG",
+    className: "bg-red-600 rounded-full size-4 mr-1",
+  },
+  {
+    name: "Feature",
+    type: "FEATURE",
+    className: "bg-purple-600 rounded-full size-4 mr-1",
+  },
+  {
+    name: "Improvement",
+    type: "IMPROVEMENT",
+    className: "bg-blue-600 rounded-full size-4 mr-1",
+  },
+];
