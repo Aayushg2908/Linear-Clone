@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
   ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
@@ -15,9 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Projects } from "@/constants";
 import { useCreateProject } from "@/hooks/use-create-project";
+import { useRenameProject } from "@/hooks/use-rename-project";
 import { cn } from "@/lib/utils";
 import { PROJECTTYPE, Project, User } from "@prisma/client";
-import { CheckIcon, Grip, PlusIcon } from "lucide-react";
+import { CheckIcon, Edit, Grip, PlusIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -36,6 +39,7 @@ interface ProjectCardProps {
 const ProjectCard = ({ projects, members }: ProjectCardProps) => {
   const { onOpen } = useCreateProject();
   const params = useParams();
+  const { onOpen: onRenameOpen } = useRenameProject();
 
   const handleStatusSelect = async (id: string, status: PROJECTTYPE) => {
     try {
@@ -100,7 +104,7 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                           <DropdownMenuTrigger>
                             <project.Icon
                               className={cn(
-                                "size-4 text-white rounded-full",
+                                "size-4 text-white rounded-sm",
                                 project.type === "COMPLETED" && "bg-green-600 ",
                                 project.type === "INPROGRESS" &&
                                   "bg-yellow-600",
@@ -158,7 +162,25 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                     </Button>
                   </div>
                 </ContextMenuTrigger>
-                <ContextMenuContent>Hello</ContextMenuContent>
+                <ContextMenuContent>
+                  <ContextMenuItem
+                    onSelect={() =>
+                      onRenameOpen(
+                        pro.id,
+                        params.workspaceId as string,
+                        pro.title,
+                        pro.summary
+                      )
+                    }
+                    className="cursor-pointer"
+                  >
+                    <Edit className="size-4 mr-1" /> Edit
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem className="cursor-pointer">
+                    <Trash2 className="size-4 mr-1" /> Delete
+                  </ContextMenuItem>
+                </ContextMenuContent>
               </ContextMenu>
             ))}
             <Button
