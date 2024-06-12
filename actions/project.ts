@@ -123,3 +123,40 @@ export const updateProject = async ({
 
   return { success: "Project status updated successfully!" };
 };
+
+export const deleteProject = async ({
+  id,
+  workspaceId,
+}: {
+  id: string;
+  workspaceId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const project = await db.project.findUnique({
+    where: {
+      id,
+      workspaceId,
+    },
+  });
+  if (!project) {
+    return { error: "Project not found" };
+  }
+
+  if (project.ownerId !== session.user.id) {
+    return { error: "You do not have the permission to do this action!" };
+  }
+
+  await db.project.delete({
+    where: {
+      id,
+    },
+  });
+
+  revalidatePath(`/dashboard/${workspaceId}/projects`);
+
+  return { success: "Project deleted successfully!" };
+};
