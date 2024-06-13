@@ -3,6 +3,7 @@ import RenameProjectButton from "./rename-project-button";
 import { getProjectById } from "@/actions/project";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import MainContent from "./main-content";
+import ProjectSidebar from "./project-sidebar";
 
 const ProjectPage = async ({
   params,
@@ -31,6 +32,11 @@ const ProjectPage = async ({
           <MainContent project={project} workspaceId={workspaceId} />
         </ScrollArea>
       </div>
+      <ProjectSidebar
+        project={project}
+        workspaceId={workspaceId}
+        members={workspace.members}
+      />
     </div>
   );
 };
