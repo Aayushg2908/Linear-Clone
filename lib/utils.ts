@@ -37,3 +37,15 @@ export function timeAgo(date: Date) {
 
   return "just now";
 }
+
+export const getProjectCompletePercentage = (starDate: Date, endDate: Date) => {
+  const now = new Date();
+  if (now.getTime() < starDate.getTime()) {
+    return 0;
+  } else if (now.getTime() > endDate.getTime()) {
+    return 100;
+  }
+  const total = endDate.getTime() - starDate.getTime();
+  const current = now.getTime() - starDate.getTime();
+  return Math.floor((current / total) * 100);
+};

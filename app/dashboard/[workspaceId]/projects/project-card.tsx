@@ -30,10 +30,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ProjectLabel, Projects } from "@/constants";
 import { useCreateProject } from "@/hooks/use-create-project";
 import { useRenameProject } from "@/hooks/use-rename-project";
-import { cn } from "@/lib/utils";
+import { cn, getProjectCompletePercentage } from "@/lib/utils";
 import { PROJECTLABEL, PROJECTTYPE, Project, User } from "@prisma/client";
 import {
   CalendarIcon,
@@ -41,6 +47,7 @@ import {
   Edit,
   Grip,
   PlusIcon,
+  RefreshCcwDot,
   SquarePlay,
   Tag,
   Trash2,
@@ -339,47 +346,67 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                         <span className="text-sm text-muted-foreground">
                           {pro.summary}
                         </span>
-                        {pro.label && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <Badge
-                                variant="secondary"
-                                className="flex items-center gap-x-1 w-fit mt-1"
-                              >
-                                <div
-                                  className={cn(
-                                    "size-3 rounded-full",
-                                    pro.label === "BUG" && "bg-red-600",
-                                    pro.label === "FEATURE" && "bg-purple-600",
-                                    pro.label === "IMPROVEMENT" && "bg-blue-600"
-                                  )}
-                                />
-                                {pro.label}
-                              </Badge>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {ProjectLabel.map((label) => (
-                                <DropdownMenuItem
-                                  key={label.type}
-                                  className="cursor-pointer"
-                                  onSelect={() => {
-                                    if (pro.label !== label.type) {
-                                      handleLabelSelect(pro.id, label.type);
-                                    } else {
-                                      handleLabelSelect(pro.id, null);
-                                    }
-                                  }}
+                        <span className="flex items-center gap-x-1">
+                          {pro.label && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <Badge
+                                  variant="secondary"
+                                  className="flex items-center gap-x-1 w-fit mt-1"
                                 >
-                                  <span className={label.className} />
-                                  {label.name}
-                                  {label.type === pro.label && (
-                                    <CheckIcon className="size-4 text-green-600 ml-2" />
+                                  <div
+                                    className={cn(
+                                      "size-3 rounded-full",
+                                      pro.label === "BUG" && "bg-red-600",
+                                      pro.label === "FEATURE" &&
+                                        "bg-purple-600",
+                                      pro.label === "IMPROVEMENT" &&
+                                        "bg-blue-600"
+                                    )}
+                                  />
+                                  {pro.label}
+                                </Badge>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                {ProjectLabel.map((label) => (
+                                  <DropdownMenuItem
+                                    key={label.type}
+                                    className="cursor-pointer"
+                                    onSelect={() => {
+                                      if (pro.label !== label.type) {
+                                        handleLabelSelect(pro.id, label.type);
+                                      } else {
+                                        handleLabelSelect(pro.id, null);
+                                      }
+                                    }}
+                                  >
+                                    <span className={label.className} />
+                                    {label.name}
+                                    {label.type === pro.label && (
+                                      <CheckIcon className="size-4 text-green-600 ml-2" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                          {pro.startDate && pro.endDate && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <RefreshCcwDot className="size-4 ml-1 text-muted-foreground hover:text-white" />
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-black text-white">
+                                  {getProjectCompletePercentage(
+                                    pro.startDate,
+                                    pro.endDate
                                   )}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                                  % completed
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </span>
                       </div>
                       <Button
                         size="icon"
