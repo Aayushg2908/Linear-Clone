@@ -40,6 +40,7 @@ import { ProjectLabel, Projects } from "@/constants";
 import { useCreateProject } from "@/hooks/use-create-project";
 import { useRenameProject } from "@/hooks/use-rename-project";
 import { cn, getProjectCompletePercentage } from "@/lib/utils";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { PROJECTLABEL, PROJECTTYPE, Project, User } from "@prisma/client";
 import {
   CalendarIcon,
@@ -255,394 +256,578 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
     }
   };
 
+  const handleDragEnd = async (result: any) => {
+    const { destination, source, type } = result;
+
+    if (!destination) return;
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    if (type !== "Projects") return;
+
+    if (source.droppableId === destination.droppableId) {
+      try {
+        toast.loading("Reordering project...");
+        const projectsList = [...projects[source.droppableId as PROJECTTYPE]];
+        const [removed] = projectsList.splice(source.index, 1);
+        projectsList.splice(destination.index, 0, removed);
+
+        const updatedProjects = {
+          ...projects,
+          [source.droppableId]: projectsList,
+        };
+
+        updatedProjects[source.droppableId as PROJECTTYPE].forEach(
+          (project, index) => {
+            project.order = index;
+          }
+        );
+
+        projects[source.droppableId as PROJECTTYPE] =
+          updatedProjects[source.droppableId as PROJECTTYPE];
+
+        for (const project of updatedProjects[
+          source.droppableId as PROJECTTYPE
+        ]) {
+          const response = await updateProject({
+            id: project.id,
+            workspaceId: params.workspaceId as string,
+            values: {
+              order: project.order,
+            },
+          });
+          if (response?.error) {
+            return toast.error(response.error);
+          }
+        }
+
+        toast.success("Issue reordered successfully.");
+      } catch (error) {
+        toast.error("Something went wrong! Please try again.");
+      } finally {
+        toast.dismiss();
+        window.location.reload();
+      }
+    } else {
+      try {
+        toast.loading("Moving project...");
+        const sourceProjectsList = [
+          ...projects[source.droppableId as PROJECTTYPE],
+        ];
+        const destinationProjectsList = [
+          ...projects[destination.droppableId as PROJECTTYPE],
+        ];
+
+        const [removed] = sourceProjectsList.splice(source.index, 1);
+        destinationProjectsList.splice(destination.index, 0, removed);
+
+        const updatedProjects = {
+          ...projects,
+          [source.droppableId]: sourceProjectsList,
+          [destination.droppableId]: destinationProjectsList,
+        };
+
+        updatedProjects[source.droppableId as PROJECTTYPE].forEach(
+          (project, index) => {
+            project.order = index;
+          }
+        );
+        updatedProjects[destination.droppableId as PROJECTTYPE].forEach(
+          (project, index) => {
+            project.order = index;
+          }
+        );
+
+        projects[source.droppableId as PROJECTTYPE] =
+          updatedProjects[source.droppableId as PROJECTTYPE];
+        projects[destination.droppableId as PROJECTTYPE] =
+          updatedProjects[destination.droppableId as PROJECTTYPE];
+
+        for (const project of updatedProjects[
+          source.droppableId as PROJECTTYPE
+        ]) {
+          const response = await updateProject({
+            id: project.id,
+            workspaceId: params.workspaceId as string,
+            values: {
+              order: project.order,
+            },
+          });
+          if (response?.error) {
+            return toast.error(response.error);
+          }
+        }
+
+        for (const project of updatedProjects[
+          destination.droppableId as PROJECTTYPE
+        ]) {
+          const response = await updateProject({
+            id: project.id,
+            workspaceId: params.workspaceId as string,
+            values: {
+              order: project.order,
+              status: destination.droppableId as PROJECTTYPE,
+            },
+          });
+          if (response?.error) {
+            return toast.error(response.error);
+          }
+        }
+
+        toast.success("Issue reordered successfully.");
+      } catch (error) {
+        toast.error("Something went wrong! Please try again.");
+      } finally {
+        toast.dismiss();
+        window.location.reload();
+      }
+    }
+  };
+
   return (
     <>
-      <div className="mt-4 w-full flex flex-col sm:flex-row gap-4 sm:flex-wrap p-2 justify-center">
-        {Projects.map((project) => (
-          <div
-            key={project.type}
-            className="flex flex-col rounded-md border w-full sm:w-[300px] min-h-[200px]"
-          >
-            <div className="flex items-center justify-between border-b p-2">
-              <span className="flex gap-x-2 items-center">
-                <project.Icon
-                  className={cn(
-                    "size-5 text-white rounded-sm",
-                    project.type === "COMPLETED" && "bg-green-600 ",
-                    project.type === "INPROGRESS" && "bg-yellow-600",
-                    project.type === "CANCELLED" && "bg-red-600"
-                  )}
-                />
-                <span className="font-bold">{project.name}</span>
-                <span className="text-muted-foreground">
-                  {projects[project.type].length}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="mt-4 w-full flex flex-col sm:flex-row gap-4 sm:flex-wrap p-2 justify-center">
+          {Projects.map((project) => (
+            <div
+              key={project.type}
+              className="flex flex-col rounded-md border w-full sm:w-[300px] min-h-[200px]"
+            >
+              <div className="flex items-center justify-between border-b p-2">
+                <span className="flex gap-x-2 items-center">
+                  <project.Icon
+                    className={cn(
+                      "size-5 text-white rounded-sm",
+                      project.type === "COMPLETED" && "bg-green-600 ",
+                      project.type === "INPROGRESS" && "bg-yellow-600",
+                      project.type === "CANCELLED" && "bg-red-600"
+                    )}
+                  />
+                  <span className="font-bold">{project.name}</span>
+                  <span className="text-muted-foreground">
+                    {projects[project.type].length}
+                  </span>
                 </span>
-              </span>
-              <Button
-                onClick={() => onOpen(project.type)}
-                size="icon"
-                variant="ghost"
-              >
-                <PlusIcon className="size-5" />
-              </Button>
-            </div>
-            <ol className="w-full flex flex-col gap-y-1 p-2">
-              {projects[project.type].map((pro) => (
-                <ContextMenu key={pro.id}>
-                  <ContextMenuTrigger>
-                    <div className="flex justify-between items-center border border-neutral-700 rounded-lg p-3">
-                      <div className="flex flex-col gap-y-1">
-                        <span className="flex gap-x-1 items-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <project.Icon
-                                className={cn(
-                                  "size-4 text-white rounded-sm",
-                                  project.type === "COMPLETED" &&
-                                    "bg-green-600 ",
-                                  project.type === "INPROGRESS" &&
-                                    "bg-yellow-600",
-                                  project.type === "CANCELLED" && "bg-red-600"
-                                )}
-                              />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {Projects.map((project) => (
-                                <DropdownMenuItem
-                                  key={project.type}
-                                  className="flex items-center justify-between cursor-pointer"
-                                  onSelect={() =>
-                                    handleStatusSelect(pro.id, project.type)
-                                  }
-                                >
-                                  <span className="flex gap-x-2 items-center">
-                                    <project.Icon
-                                      className={cn(
-                                        "size-4 text-white rounded-full",
-                                        project.type === "COMPLETED" &&
-                                          "bg-green-600 ",
-                                        project.type === "INPROGRESS" &&
-                                          "bg-yellow-600",
-                                        project.type === "CANCELLED" &&
-                                          "bg-red-600"
-                                      )}
-                                    />
-                                    {project.name}
+                <Button
+                  onClick={() => onOpen(project.type)}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <PlusIcon className="size-5" />
+                </Button>
+              </div>
+              <Droppable droppableId={project.type} type="Projects">
+                {(provided) => (
+                  <ol
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="w-full flex flex-col gap-y-1 p-2"
+                  >
+                    {projects[project.type].map((pro, index) => (
+                      <Draggable key={index} index={index} draggableId={pro.id}>
+                        {(provided) => (
+                          <ContextMenu>
+                            <ContextMenuTrigger>
+                              <div
+                                {...provided.draggableProps}
+                                ref={provided.innerRef}
+                                className="flex justify-between items-center border border-neutral-700 rounded-lg p-3"
+                              >
+                                <div className="flex flex-col gap-y-1">
+                                  <span className="flex gap-x-1 items-center">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger>
+                                        <project.Icon
+                                          className={cn(
+                                            "size-4 text-white rounded-sm",
+                                            project.type === "COMPLETED" &&
+                                              "bg-green-600 ",
+                                            project.type === "INPROGRESS" &&
+                                              "bg-yellow-600",
+                                            project.type === "CANCELLED" &&
+                                              "bg-red-600"
+                                          )}
+                                        />
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent>
+                                        {Projects.map((project) => (
+                                          <DropdownMenuItem
+                                            key={project.type}
+                                            className="flex items-center justify-between cursor-pointer"
+                                            onSelect={() =>
+                                              handleStatusSelect(
+                                                pro.id,
+                                                project.type
+                                              )
+                                            }
+                                          >
+                                            <span className="flex gap-x-2 items-center">
+                                              <project.Icon
+                                                className={cn(
+                                                  "size-4 text-white rounded-full",
+                                                  project.type ===
+                                                    "COMPLETED" &&
+                                                    "bg-green-600 ",
+                                                  project.type ===
+                                                    "INPROGRESS" &&
+                                                    "bg-yellow-600",
+                                                  project.type ===
+                                                    "CANCELLED" && "bg-red-600"
+                                                )}
+                                              />
+                                              {project.name}
+                                            </span>
+                                            {project.type === pro.status && (
+                                              <CheckIcon className="ml-1 size-4 text-green-600" />
+                                            )}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <Link
+                                      href={`/dashboard/${params.workspaceId}/projects/${pro.id}`}
+                                      className="text-sm line-clamp-1 hover:underline hover:text-blue-500"
+                                    >
+                                      {pro.title}
+                                    </Link>
                                   </span>
-                                  {project.type === pro.status && (
-                                    <CheckIcon className="ml-1 size-4 text-green-600" />
-                                  )}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <Link
-                            href={`/dashboard/${params.workspaceId}/projects/${pro.id}`}
-                            className="text-sm line-clamp-1 hover:underline hover:text-blue-500"
-                          >
-                            {pro.title}
-                          </Link>
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {pro.summary}
-                        </span>
-                        <span className="flex items-center gap-x-1">
-                          {pro.label && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger>
-                                <Badge
-                                  variant="secondary"
-                                  className="flex items-center gap-x-1 w-fit mt-1"
+                                  <span className="text-sm text-muted-foreground">
+                                    {pro.summary}
+                                  </span>
+                                  <span className="flex items-center gap-x-1">
+                                    {pro.label && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger>
+                                          <Badge
+                                            variant="secondary"
+                                            className="flex items-center gap-x-1 w-fit mt-1"
+                                          >
+                                            <div
+                                              className={cn(
+                                                "size-3 rounded-full",
+                                                pro.label === "BUG" &&
+                                                  "bg-red-600",
+                                                pro.label === "FEATURE" &&
+                                                  "bg-purple-600",
+                                                pro.label === "IMPROVEMENT" &&
+                                                  "bg-blue-600"
+                                              )}
+                                            />
+                                            {pro.label}
+                                          </Badge>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                          {ProjectLabel.map((label) => (
+                                            <DropdownMenuItem
+                                              key={label.type}
+                                              className="cursor-pointer"
+                                              onSelect={() => {
+                                                if (pro.label !== label.type) {
+                                                  handleLabelSelect(
+                                                    pro.id,
+                                                    label.type
+                                                  );
+                                                } else {
+                                                  handleLabelSelect(
+                                                    pro.id,
+                                                    null
+                                                  );
+                                                }
+                                              }}
+                                            >
+                                              <span
+                                                className={label.className}
+                                              />
+                                              {label.name}
+                                              {label.type === pro.label && (
+                                                <CheckIcon className="size-4 text-green-600 ml-2" />
+                                              )}
+                                            </DropdownMenuItem>
+                                          ))}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                    {pro.startDate && pro.endDate && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger>
+                                            <RefreshCcwDot className="size-4 ml-1 text-muted-foreground hover:text-white" />
+                                          </TooltipTrigger>
+                                          <TooltipContent className="bg-black text-white">
+                                            {getProjectCompletePercentage(
+                                              pro.startDate,
+                                              pro.endDate
+                                            )}
+                                            % completed
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
+                                  </span>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="border border-neutral-700"
+                                  {...provided.dragHandleProps}
                                 >
-                                  <div
-                                    className={cn(
-                                      "size-3 rounded-full",
-                                      pro.label === "BUG" && "bg-red-600",
-                                      pro.label === "FEATURE" &&
-                                        "bg-purple-600",
-                                      pro.label === "IMPROVEMENT" &&
-                                        "bg-blue-600"
-                                    )}
-                                  />
-                                  {pro.label}
-                                </Badge>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                {ProjectLabel.map((label) => (
-                                  <DropdownMenuItem
-                                    key={label.type}
-                                    className="cursor-pointer"
-                                    onSelect={() => {
-                                      if (pro.label !== label.type) {
-                                        handleLabelSelect(pro.id, label.type);
-                                      } else {
-                                        handleLabelSelect(pro.id, null);
+                                  <Grip className="size-4" />
+                                </Button>
+                              </div>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <SquarePlay className="size-4 mr-1" /> Status
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  {Projects.map((project) => (
+                                    <ContextMenuItem
+                                      key={project.type}
+                                      onSelect={() =>
+                                        handleStatusSelect(pro.id, project.type)
                                       }
-                                    }}
-                                  >
-                                    <span className={label.className} />
-                                    {label.name}
-                                    {label.type === pro.label && (
-                                      <CheckIcon className="size-4 text-green-600 ml-2" />
-                                    )}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                          {pro.startDate && pro.endDate && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <RefreshCcwDot className="size-4 ml-1 text-muted-foreground hover:text-white" />
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-black text-white">
-                                  {getProjectCompletePercentage(
-                                    pro.startDate,
-                                    pro.endDate
-                                  )}
-                                  % completed
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </span>
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="border border-neutral-700"
-                      >
-                        <Grip className="size-4" />
-                      </Button>
-                    </div>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent>
-                    <ContextMenuSub>
-                      <ContextMenuSubTrigger className="cursor-pointer">
-                        <SquarePlay className="size-4 mr-1" /> Status
-                      </ContextMenuSubTrigger>
-                      <ContextMenuSubContent>
-                        {Projects.map((project) => (
-                          <ContextMenuItem
-                            key={project.type}
-                            onSelect={() =>
-                              handleStatusSelect(pro.id, project.type)
-                            }
-                            className="cursor-pointer"
-                          >
-                            <span className="flex gap-x-2 items-center">
-                              <project.Icon
-                                className={cn(
-                                  "size-4 text-white rounded-full",
-                                  project.type === "COMPLETED" &&
-                                    "bg-green-600 ",
-                                  project.type === "INPROGRESS" &&
-                                    "bg-yellow-600",
-                                  project.type === "CANCELLED" && "bg-red-600"
-                                )}
-                              />
-                              {project.name}
-                            </span>
-                            {project.type === pro.status && (
-                              <CheckIcon className="ml-1 size-4 text-green-600" />
-                            )}
-                          </ContextMenuItem>
-                        ))}
-                      </ContextMenuSubContent>
-                    </ContextMenuSub>
-                    <ContextMenuSub>
-                      <ContextMenuSubTrigger className="cursor-pointer">
-                        <Tag className="size-4 mr-1" /> Label
-                      </ContextMenuSubTrigger>
-                      <ContextMenuSubContent>
-                        {ProjectLabel.map((label) => (
-                          <ContextMenuItem
-                            key={label.type}
-                            className="cursor-pointer"
-                            onClick={() => {
-                              if (pro.label !== label.type) {
-                                handleLabelSelect(pro.id, label.type);
-                              } else {
-                                handleLabelSelect(pro.id, null);
-                              }
-                            }}
-                          >
-                            <span className={label.className} />
-                            {label.name}
-                            {label.type === pro.label && (
-                              <CheckIcon className="size-4 text-green-600 ml-2" />
-                            )}
-                          </ContextMenuItem>
-                        ))}
-                      </ContextMenuSubContent>
-                    </ContextMenuSub>
-                    <ContextMenuSub>
-                      <ContextMenuSubTrigger className="cursor-pointer">
-                        <UserRoundCog className="size-4 mr-1" /> Lead
-                      </ContextMenuSubTrigger>
-                      <ContextMenuSubContent>
-                        {members.map((member) => (
-                          <ContextMenuItem
-                            key={member.id}
-                            className="cursor-pointer flex items-center gap-x-1"
-                            onSelect={() => {
-                              if (pro.lead && pro.lead === member.id) {
-                                handleProjectLead({
-                                  userId: member.id,
-                                  projectId: pro.id,
-                                  name: member.name!,
-                                  type: "REMOVE",
-                                });
-                              } else {
-                                handleProjectLead({
-                                  userId: member.id,
-                                  projectId: pro.id,
-                                  name: member.name!,
-                                  type: "ASSIGN",
-                                });
-                              }
-                            }}
-                          >
-                            {member.image ? (
-                              <Image
-                                src={member.image}
-                                alt="user-image"
-                                width={30}
-                                height={30}
-                                className="size-4 rounded-full"
-                              />
-                            ) : (
-                              <UserCircleIcon className="size-4 rounded-full text-slate-300" />
-                            )}
-                            <span className="text-sm">{member.name}</span>
-                            {pro.lead === member.id && (
-                              <CheckIcon className="size-4 text-green-600" />
-                            )}
-                          </ContextMenuItem>
-                        ))}
-                      </ContextMenuSubContent>
-                    </ContextMenuSub>
-                    <ContextMenuSub>
-                      <ContextMenuSubTrigger className="cursor-pointer">
-                        <Users className="size-4 mr-1" /> Members
-                      </ContextMenuSubTrigger>
-                      <ContextMenuSubContent>
-                        {members.map((member) => (
-                          <ContextMenuItem
-                            key={member.id}
-                            className="cursor-pointer flex items-center gap-x-1"
-                            onSelect={() => {
-                              if (pro.members.includes(member.id)) {
-                                handleAddMember({
-                                  userId: member.id,
-                                  projectId: pro.id,
-                                  name: member.name!,
-                                  type: "REMOVE",
-                                });
-                              } else {
-                                handleAddMember({
-                                  userId: member.id,
-                                  projectId: pro.id,
-                                  name: member.name!,
-                                  type: "ASSIGN",
-                                });
-                              }
-                            }}
-                          >
-                            {member.image ? (
-                              <Image
-                                src={member.image}
-                                alt="user-image"
-                                width={30}
-                                height={30}
-                                className="size-4 rounded-full"
-                              />
-                            ) : (
-                              <UserCircleIcon className="size-4 rounded-full text-slate-300" />
-                            )}
-                            <span className="text-sm">{member.name}</span>
-                            {pro.members.includes(member.id) && (
-                              <CheckIcon className="size-4 text-green-600" />
-                            )}
-                          </ContextMenuItem>
-                        ))}
-                      </ContextMenuSubContent>
-                    </ContextMenuSub>
-                    <ContextMenuSub>
-                      <ContextMenuSubTrigger className="cursor-pointer">
-                        <CalendarIcon className="size-4 mr-1" /> Start Date
-                      </ContextMenuSubTrigger>
-                      <ContextMenuSubContent>
-                        <Calendar
-                          disabled={(date: Date) =>
-                            date <= new Date() || date < new Date("1900-01-01")
-                          }
-                          mode="single"
-                          className="rounded-md"
-                          onSelect={(date: Date | undefined) =>
-                            handleAddDate(date as Date, pro.id, "START")
-                          }
-                          selected={pro.startDate as Date}
-                        />
-                      </ContextMenuSubContent>
-                    </ContextMenuSub>
-                    <ContextMenuSub>
-                      <ContextMenuSubTrigger className="cursor-pointer">
-                        <CalendarIcon className="size-4 mr-1" /> End Date
-                      </ContextMenuSubTrigger>
-                      <ContextMenuSubContent>
-                        <Calendar
-                          disabled={(date: Date) =>
-                            date <= new Date() || date < new Date("1900-01-01")
-                          }
-                          mode="single"
-                          className="rounded-md"
-                          onSelect={(date: Date | undefined) =>
-                            handleAddDate(date as Date, pro.id, "END")
-                          }
-                          selected={pro.endDate as Date}
-                        />
-                      </ContextMenuSubContent>
-                    </ContextMenuSub>
-                    <ContextMenuItem
-                      onSelect={() =>
-                        onRenameOpen(
-                          pro.id,
-                          params.workspaceId as string,
-                          pro.title,
-                          pro.summary
-                        )
-                      }
-                      className="cursor-pointer"
+                                      className="cursor-pointer"
+                                    >
+                                      <span className="flex gap-x-2 items-center">
+                                        <project.Icon
+                                          className={cn(
+                                            "size-4 text-white rounded-full",
+                                            project.type === "COMPLETED" &&
+                                              "bg-green-600 ",
+                                            project.type === "INPROGRESS" &&
+                                              "bg-yellow-600",
+                                            project.type === "CANCELLED" &&
+                                              "bg-red-600"
+                                          )}
+                                        />
+                                        {project.name}
+                                      </span>
+                                      {project.type === pro.status && (
+                                        <CheckIcon className="ml-1 size-4 text-green-600" />
+                                      )}
+                                    </ContextMenuItem>
+                                  ))}
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <Tag className="size-4 mr-1" /> Label
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  {ProjectLabel.map((label) => (
+                                    <ContextMenuItem
+                                      key={label.type}
+                                      className="cursor-pointer"
+                                      onClick={() => {
+                                        if (pro.label !== label.type) {
+                                          handleLabelSelect(pro.id, label.type);
+                                        } else {
+                                          handleLabelSelect(pro.id, null);
+                                        }
+                                      }}
+                                    >
+                                      <span className={label.className} />
+                                      {label.name}
+                                      {label.type === pro.label && (
+                                        <CheckIcon className="size-4 text-green-600 ml-2" />
+                                      )}
+                                    </ContextMenuItem>
+                                  ))}
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <UserRoundCog className="size-4 mr-1" /> Lead
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  {members.map((member) => (
+                                    <ContextMenuItem
+                                      key={member.id}
+                                      className="cursor-pointer flex items-center gap-x-1"
+                                      onSelect={() => {
+                                        if (
+                                          pro.lead &&
+                                          pro.lead === member.id
+                                        ) {
+                                          handleProjectLead({
+                                            userId: member.id,
+                                            projectId: pro.id,
+                                            name: member.name!,
+                                            type: "REMOVE",
+                                          });
+                                        } else {
+                                          handleProjectLead({
+                                            userId: member.id,
+                                            projectId: pro.id,
+                                            name: member.name!,
+                                            type: "ASSIGN",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      {member.image ? (
+                                        <Image
+                                          src={member.image}
+                                          alt="user-image"
+                                          width={30}
+                                          height={30}
+                                          className="size-4 rounded-full"
+                                        />
+                                      ) : (
+                                        <UserCircleIcon className="size-4 rounded-full text-slate-300" />
+                                      )}
+                                      <span className="text-sm">
+                                        {member.name}
+                                      </span>
+                                      {pro.lead === member.id && (
+                                        <CheckIcon className="size-4 text-green-600" />
+                                      )}
+                                    </ContextMenuItem>
+                                  ))}
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <Users className="size-4 mr-1" /> Members
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  {members.map((member) => (
+                                    <ContextMenuItem
+                                      key={member.id}
+                                      className="cursor-pointer flex items-center gap-x-1"
+                                      onSelect={() => {
+                                        if (pro.members.includes(member.id)) {
+                                          handleAddMember({
+                                            userId: member.id,
+                                            projectId: pro.id,
+                                            name: member.name!,
+                                            type: "REMOVE",
+                                          });
+                                        } else {
+                                          handleAddMember({
+                                            userId: member.id,
+                                            projectId: pro.id,
+                                            name: member.name!,
+                                            type: "ASSIGN",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      {member.image ? (
+                                        <Image
+                                          src={member.image}
+                                          alt="user-image"
+                                          width={30}
+                                          height={30}
+                                          className="size-4 rounded-full"
+                                        />
+                                      ) : (
+                                        <UserCircleIcon className="size-4 rounded-full text-slate-300" />
+                                      )}
+                                      <span className="text-sm">
+                                        {member.name}
+                                      </span>
+                                      {pro.members.includes(member.id) && (
+                                        <CheckIcon className="size-4 text-green-600" />
+                                      )}
+                                    </ContextMenuItem>
+                                  ))}
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <CalendarIcon className="size-4 mr-1" /> Start
+                                  Date
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  <Calendar
+                                    disabled={(date: Date) =>
+                                      date <= new Date() ||
+                                      date < new Date("1900-01-01")
+                                    }
+                                    mode="single"
+                                    className="rounded-md"
+                                    onSelect={(date: Date | undefined) =>
+                                      handleAddDate(
+                                        date as Date,
+                                        pro.id,
+                                        "START"
+                                      )
+                                    }
+                                    selected={pro.startDate as Date}
+                                  />
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <CalendarIcon className="size-4 mr-1" /> End
+                                  Date
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  <Calendar
+                                    disabled={(date: Date) =>
+                                      date <= new Date() ||
+                                      date < new Date("1900-01-01")
+                                    }
+                                    mode="single"
+                                    className="rounded-md"
+                                    onSelect={(date: Date | undefined) =>
+                                      handleAddDate(date as Date, pro.id, "END")
+                                    }
+                                    selected={pro.endDate as Date}
+                                  />
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
+                              <ContextMenuItem
+                                onSelect={() =>
+                                  onRenameOpen(
+                                    pro.id,
+                                    params.workspaceId as string,
+                                    pro.title,
+                                    pro.summary
+                                  )
+                                }
+                                className="cursor-pointer"
+                              >
+                                <Edit className="size-4 mr-1" /> Edit Project
+                              </ContextMenuItem>
+                              <ContextMenuSeparator />
+                              <ContextMenuItem
+                                onSelect={() => {
+                                  setSelectedProjectId(pro.id);
+                                  setAlertDialogOpen(true);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Trash2 className="size-4 mr-1" /> Delete
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                    <Button
+                      onClick={() => onOpen(project.type)}
+                      size="icon"
+                      variant="secondary"
+                      className="w-full mt-4"
                     >
-                      <Edit className="size-4 mr-1" /> Edit Project
-                    </ContextMenuItem>
-                    <ContextMenuSeparator />
-                    <ContextMenuItem
-                      onSelect={() => {
-                        setSelectedProjectId(pro.id);
-                        setAlertDialogOpen(true);
-                      }}
-                      className="cursor-pointer"
-                    >
-                      <Trash2 className="size-4 mr-1" /> Delete
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
-              ))}
-              <Button
-                onClick={() => onOpen(project.type)}
-                size="icon"
-                variant="secondary"
-                className="w-full mt-4"
-              >
-                <PlusIcon className="size-5" />
-              </Button>
-            </ol>
-          </div>
-        ))}
-      </div>
+                      <PlusIcon className="size-5" />
+                    </Button>
+                  </ol>
+                )}
+              </Droppable>
+            </div>
+          ))}
+        </div>
+      </DragDropContext>
       <AlertDialog
         open={alertDialogOpen}
         onOpenChange={() => {
