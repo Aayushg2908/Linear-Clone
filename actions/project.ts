@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { PROJECTLABEL, PROJECTTYPE } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const createProject = async ({
   title,
@@ -223,4 +223,29 @@ export const addMember = async ({
   }
 
   return { error: "You do not have the permission to do this action!" };
+};
+
+export const getProjectById = async ({
+  workspaceId,
+  projectId,
+}: {
+  workspaceId: string;
+  projectId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const project = await db.project.findUnique({
+    where: {
+      id: projectId,
+      workspaceId,
+    },
+  });
+  if (!project) {
+    return notFound();
+  }
+
+  return project;
 };
