@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -35,6 +36,7 @@ import { useRenameProject } from "@/hooks/use-rename-project";
 import { cn } from "@/lib/utils";
 import { PROJECTLABEL, PROJECTTYPE, Project, User } from "@prisma/client";
 import {
+  CalendarIcon,
   CheckIcon,
   Edit,
   Grip,
@@ -203,6 +205,40 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
           type === "ASSIGN"
             ? `${name} added to the project successfully`
             : `${name} removed from the project successfully`
+        );
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleAddDate = async (
+    date: Date,
+    projectId: string,
+    type: "START" | "END"
+  ) => {
+    try {
+      toast.loading(
+        type === "START"
+          ? "Updating project start date..."
+          : "Updating project end date..."
+      );
+      const response = await updateProject({
+        id: projectId,
+        workspaceId: params.workspaceId as string,
+        values: {
+          [type === "START" ? "startDate" : "endDate"]: date,
+        },
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success(
+          `Project ${
+            type === "START" ? "start" : "end"
+          } date updated successfully.`
         );
       }
     } catch (error) {
@@ -506,6 +542,42 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                         ))}
                       </ContextMenuSubContent>
                     </ContextMenuSub>
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger className="cursor-pointer">
+                        <CalendarIcon className="size-4 mr-1" /> Start Date
+                      </ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        <Calendar
+                          disabled={(date: Date) =>
+                            date <= new Date() || date < new Date("1900-01-01")
+                          }
+                          mode="single"
+                          className="rounded-md"
+                          onSelect={(date: Date | undefined) =>
+                            handleAddDate(date as Date, pro.id, "START")
+                          }
+                          selected={pro.startDate as Date}
+                        />
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger className="cursor-pointer">
+                        <CalendarIcon className="size-4 mr-1" /> End Date
+                      </ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        <Calendar
+                          disabled={(date: Date) =>
+                            date <= new Date() || date < new Date("1900-01-01")
+                          }
+                          mode="single"
+                          className="rounded-md"
+                          onSelect={(date: Date | undefined) =>
+                            handleAddDate(date as Date, pro.id, "END")
+                          }
+                          selected={pro.endDate as Date}
+                        />
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
                     <ContextMenuItem
                       onSelect={() =>
                         onRenameOpen(
@@ -517,7 +589,7 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                       }
                       className="cursor-pointer"
                     >
-                      <Edit className="size-4 mr-1" /> Edit
+                      <Edit className="size-4 mr-1" /> Edit Project
                     </ContextMenuItem>
                     <ContextMenuSeparator />
                     <ContextMenuItem
