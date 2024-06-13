@@ -59,10 +59,12 @@ const ProjectSidebar = ({
   project,
   workspaceId,
   members,
+  mobile = false,
 }: {
   project: Project;
   workspaceId: string;
   members: User[];
+  mobile?: boolean;
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const Icon = Projects[getIconIndex(project.status)].Icon;
@@ -252,7 +254,13 @@ const ProjectSidebar = ({
   if (!isMounted) return null;
 
   return (
-    <aside className="max-md:hidden fixed top-0 right-0 z-50 w-[250px] h-full border-l border-l-slate-600 flex flex-col py-2 px-4 gap-y-8">
+    <aside
+      className={cn(
+        "w-[250px] h-full flex flex-col gap-y-8",
+        !mobile &&
+          "max-md:hidden fixed top-0 right-0 z-50 border-l border-l-slate-600 py-2 px-4"
+      )}
+    >
       <h1 className="w-full text-center text-xl font-bold">Properties</h1>
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-x-2 w-fit">

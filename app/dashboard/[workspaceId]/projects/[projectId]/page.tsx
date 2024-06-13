@@ -4,6 +4,8 @@ import { getProjectById } from "@/actions/project";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import MainContent from "./main-content";
 import ProjectSidebar from "./project-sidebar";
+import { SheetMenu } from "../../sheet-menu";
+import ProjectSidebarMenu from "./project-sidebar-menu";
 
 const ProjectPage = async ({
   params,
@@ -20,11 +22,21 @@ const ProjectPage = async ({
       <div className="w-full h-full flex flex-col md:mr-[250px]">
         <nav className="w-full h-[50px] px-4 flex items-center justify-between border-b border-b-slate-600">
           <div className="flex items-center gap-x-2">
+            <div className="md:hidden">
+              <SheetMenu workspaceId={workspaceId} />
+            </div>
             <RenameProjectButton
               projectId={projectId}
               title={project.title}
               summary={project.summary}
               workspaceId={workspaceId}
+            />
+          </div>
+          <div className="md:hidden">
+            <ProjectSidebarMenu
+              project={project}
+              workspaceId={workspaceId}
+              members={workspace.members}
             />
           </div>
         </nav>
