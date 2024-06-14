@@ -65,3 +65,134 @@ export const getWorkspace = async ({
 
   return workspace;
 };
+
+export const getWorkspaceById = async ({
+  workspaceId,
+}: {
+  workspaceId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const workspace = await db.workspace.findUnique({
+    where: {
+      id: workspaceId,
+    },
+  });
+  if (!workspace) {
+    return notFound();
+  }
+
+  return workspace;
+};
+
+export const updateWorkspace = async ({
+  id,
+  name,
+}: {
+  id: string;
+  name: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const workspace = await db.workspace.findUnique({
+    where: {
+      id,
+    },
+  });
+  if (!workspace) {
+    return { error: "Workspace not found" };
+  }
+
+  await db.workspace.update({
+    where: {
+      id,
+      ownerId: session.user.id!,
+    },
+    data: {
+      name,
+    },
+  });
+
+  revalidatePath("/dashboard/[workspaceId]", "layout");
+  revalidatePath(`/dashboard/${id}/settings`);
+
+  return { success: "Workspace name updated successfully" };
+};
+
+export const removeMemberFromWorkspace = async ({
+  workspaceId,
+  memberId,
+}: {
+  workspaceId: string;
+  memberId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const workspace = await db.workspace.findUnique({
+    where: {
+      id: workspaceId,
+    },
+  });
+  if (!workspace) {
+    return { error: "Workspace not found" };
+  }
+
+  await db.workspace.update({
+    where: {
+      id: workspaceId,
+      ownerId: session.user.id!,
+    },
+    data: {
+      members: {
+        disconnect: {
+          id: memberId,
+        },
+      },
+    },
+  });
+
+  revalidatePath("/dashboard/[workspaceId]", "layout");
+  revalidatePath(`/dashboard/${workspaceId}/settings`);
+
+  return { success: "Member removed successfully" };
+};
+
+export const deleteWorkspace = async ({
+  workspaceId,
+}: {
+  workspaceId: string;
+}) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  const workspace = await db.workspace.findUnique({
+    where: {
+      id: workspaceId,
+    },
+  });
+  if (!workspace) {
+    return { error: "Workspace not found" };
+  }
+
+  await db.workspace.delete({
+    where: {
+      id: workspaceId,
+      ownerId: session.user.id!,
+    },
+  });
+
+  revalidatePath("/dashboard", "layout");
+
+  return { success: "Workspace deleted successfully" };
+};

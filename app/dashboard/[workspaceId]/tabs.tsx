@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CopyPlus, LayoutGrid } from "lucide-react";
+import { CopyPlus, LayoutGrid, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,6 +14,7 @@ export const Tabs = ({ workspaceId }: Props) => {
 
   const issuesActive = pathname === `/dashboard/${workspaceId}`;
   const projectsActive = pathname === `/dashboard/${workspaceId}/projects`;
+  const settingsActive = pathname === `/dashboard/${workspaceId}/settings`;
 
   return (
     <div className="mt-32 w-full h-full flex flex-col items-start px-2">
@@ -37,6 +38,16 @@ export const Tabs = ({ workspaceId }: Props) => {
         >
           <LayoutGrid className="size-4" />
           Projects
+        </Link>
+        <Link
+          href={`/dashboard/${workspaceId}/settings`}
+          className={cn(
+            "flex gap-x-2 items-center text-lg p-1 pl-3 rounded-md",
+            settingsActive && "bg-slate-800"
+          )}
+        >
+          <Settings className="size-4" />
+          Settings
         </Link>
       </div>
     </div>
