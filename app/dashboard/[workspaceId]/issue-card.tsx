@@ -1,6 +1,6 @@
 "use client";
 
-import { assignIssue, deleteIssue, updateIssue } from "@/actions/issue";
+import { assignIssue, deleteIssue, realtimeUpdateIssue, updateIssue } from "@/actions/issue";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,29 +46,115 @@ import {
   UserCircleIcon,
 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import Link from "next/link";
 import Image from "next/image";
+import { pusherClient } from "@/lib/pusher";
+
+interface IssueProps {
+  BACKLOG: Issue[];
+  TODO: Issue[];
+  INPROGRESS: Issue[];
+  DONE: Issue[];
+  CANCELLED: Issue[];
+}
 
 interface IssueCardProps {
-  issues: {
-    BACKLOG: Issue[];
-    TODO: Issue[];
-    INPROGRESS: Issue[];
-    DONE: Issue[];
-    CANCELLED: Issue[];
-  };
+  issues: IssueProps;
   members: User[];
 }
 
 export const IssueCard = ({ issues, members }: IssueCardProps) => {
+  const [allIssues, setAllIssues] = useState<IssueProps>(issues);
   const { onOpen } = useCreateIssue();
   const { onOpen: onRenameOpen } = useRenameIssue();
   const params = useParams();
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState("");
+
+  useEffect(() => {
+    pusherClient.subscribe(params.workspaceId as string);
+
+    const createIssueHandler = (issue: Issue) => {
+      setAllIssues((prev) => {
+        return {
+          ...prev,
+          [issue.status]: [...prev[issue.status], issue],
+        };
+      });
+    };
+
+    const updateIssueHandler = ({
+      updatedIssue,
+      status,
+      prevStatus,
+      newStatus,
+    }: {
+        updatedIssue: Issue;
+        status: boolean;
+        prevStatus: ISSUETYPE;
+        newStatus: ISSUETYPE;
+      }) => {
+      if(!status) {
+        setAllIssues((prev) => {
+          return {
+            ...prev,
+            [updatedIssue.status]: prev[updatedIssue.status].map((iss) =>
+              iss.id === updatedIssue.id ? updatedIssue : iss
+            ),
+          };
+        });
+      } else if(status) {
+        setAllIssues((prev) => {
+          return {
+            ...prev,
+            [prevStatus]: prev[prevStatus].filter(
+              (iss) => iss.id !== updatedIssue.id
+            ),
+            [newStatus]: [
+              ...prev[newStatus].slice(0, updatedIssue.order),
+              updatedIssue,
+              ...prev[newStatus].slice(updatedIssue.order),
+            ],
+          };
+        });
+      }
+    };
+
+    const deleteIssueHandler = ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: ISSUETYPE;
+    }) => {
+      setAllIssues((prev) => {
+        return {
+          ...prev,
+          [status]: prev[status].filter((iss) => iss.id !== id),
+        };
+      });
+    };
+
+    const dragAndDropIssueHandler = (issues: IssueProps) => {
+      setAllIssues(issues);
+    };
+
+    pusherClient.bind("issue-created", createIssueHandler);
+    pusherClient.bind("issue-updated", updateIssueHandler);
+    pusherClient.bind("issue-deleted", deleteIssueHandler);
+    pusherClient.bind("issue-dragged-and-dropped", dragAndDropIssueHandler);
+
+    return () => {
+      pusherClient.unbind("issue-created", createIssueHandler);
+      pusherClient.unbind("issue-updated", updateIssueHandler);
+      pusherClient.unbind("issue-deleted", deleteIssueHandler);
+      pusherClient.unbind("issue-dragged-and-dropped", dragAndDropIssueHandler);
+      pusherClient.unsubscribe(params.workspaceId as string);
+    };
+  }, [allIssues, params.workspaceId]);
 
   const handleStatusSelect = async (id: string, status: ISSUETYPE) => {
     try {
@@ -187,12 +273,12 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
     if (source.droppableId === destination.droppableId) {
       try {
         toast.loading("Reordering issue...");
-        const issuesList = [...issues[source.droppableId as ISSUETYPE]];
+        const issuesList = [...allIssues[source.droppableId as ISSUETYPE]];
         const [removed] = issuesList.splice(source.index, 1);
         issuesList.splice(destination.index, 0, removed);
 
         const updatedIssues = {
-          ...issues,
+          ...allIssues,
           [source.droppableId]: issuesList,
         };
 
@@ -202,8 +288,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
           }
         );
 
-        issues[source.droppableId as ISSUETYPE] =
-          updatedIssues[source.droppableId as ISSUETYPE];
+        allIssues[source.droppableId as ISSUETYPE] = updatedIssues[source.droppableId as ISSUETYPE];
 
         for (const issue of updatedIssues[source.droppableId as ISSUETYPE]) {
           const response = await updateIssue({
@@ -218,6 +303,11 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
           }
         }
 
+        await realtimeUpdateIssue({
+          issues: allIssues,
+          workspaceId: params.workspaceId as string,
+        })
+
         toast.success("Issue reordered successfully.");
       } catch (error) {
         toast.error("Something went wrong! Please try again.");
@@ -228,16 +318,18 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
     } else {
       try {
         toast.loading("Moving issue...");
-        const sourceIssuesList = [...issues[source.droppableId as ISSUETYPE]];
+        const sourceIssuesList = [
+          ...allIssues[source.droppableId as ISSUETYPE],
+        ];
         const destinationIssuesList = [
-          ...issues[destination.droppableId as ISSUETYPE],
+          ...allIssues[destination.droppableId as ISSUETYPE],
         ];
 
         const [removed] = sourceIssuesList.splice(source.index, 1);
         destinationIssuesList.splice(destination.index, 0, removed);
 
         const updatedIssues = {
-          ...issues,
+          ...allIssues,
           [source.droppableId]: sourceIssuesList,
           [destination.droppableId]: destinationIssuesList,
         };
@@ -253,10 +345,8 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
           }
         );
 
-        issues[source.droppableId as ISSUETYPE] =
-          updatedIssues[source.droppableId as ISSUETYPE];
-        issues[destination.droppableId as ISSUETYPE] =
-          updatedIssues[destination.droppableId as ISSUETYPE];
+        allIssues[source.droppableId as ISSUETYPE] = updatedIssues[source.droppableId as ISSUETYPE];
+        allIssues[destination.droppableId as ISSUETYPE] = updatedIssues[destination.droppableId as ISSUETYPE];
 
         for (const issue of updatedIssues[source.droppableId as ISSUETYPE]) {
           const response = await updateIssue({
@@ -286,6 +376,11 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
             return toast.error(response.error);
           }
         }
+
+        await realtimeUpdateIssue({
+          issues: allIssues,
+          workspaceId: params.workspaceId as string,
+        })
 
         toast.success("Issue reordered successfully.");
       } catch (error) {
@@ -318,7 +413,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                   />
                   <span className="font-bold">{issue.name}</span>
                   <span className="text-muted-foreground">
-                    {issues[issue.type].length}
+                    {allIssues[issue.type].length}
                   </span>
                 </span>
                 <Button
@@ -336,7 +431,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                     {...provided.droppableProps}
                     className="w-full flex flex-col gap-y-1 p-2"
                   >
-                    {issues[issue.type].map((iss, index) => (
+                    {allIssues[issue.type].map((iss, index) => (
                       <Draggable key={index} draggableId={iss.id} index={index}>
                         {(provided) => (
                           <ContextMenu>

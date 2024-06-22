@@ -2,7 +2,8 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { ISSUELABEL, ISSUETYPE } from "@prisma/client";
+import { pusherServer } from "@/lib/pusher";
+import { ISSUELABEL, ISSUETYPE, Issue } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
@@ -33,7 +34,7 @@ export const createIssue = async ({
   });
   const newOrder = lastIssue ? lastIssue.order + 1 : 0;
 
-  await db.issue.create({
+  const createdIssue = await db.issue.create({
     data: {
       title,
       content,
@@ -43,6 +44,8 @@ export const createIssue = async ({
       order: newOrder,
     },
   });
+
+  pusherServer.trigger(workspaceId, "issue-created", createdIssue);
 
   revalidatePath(`/dashboard/${workspaceId}`);
 };
@@ -101,7 +104,7 @@ export const updateIssue = async ({
     issue.ownerId === session.user.id ||
     issue.assignedTo.includes(session.user.id!)
   ) {
-    await db.issue.update({
+    const updatedIssue = await db.issue.update({
       where: {
         id,
         workspaceId,
@@ -111,6 +114,15 @@ export const updateIssue = async ({
       },
     });
 
+    if(!values.order) {
+      pusherServer.trigger(workspaceId, "issue-updated", {
+        updatedIssue: updatedIssue,
+        status: values.status ? true : false,
+        prevStatus: issue.status,
+        newStatus: values.status,
+      });
+    }
+
     revalidatePath(`/dashboard/${workspaceId}`);
     revalidatePath(`/dashboard/${workspaceId}/issue/${id}`);
 
@@ -118,6 +130,27 @@ export const updateIssue = async ({
   }
 
   return { error: "You do not have the permission to do this action!" };
+};
+
+export const realtimeUpdateIssue = async ({
+  issues,
+  workspaceId,
+}: {
+    issues: {
+      BACKLOG: Issue[];
+      TODO: Issue[];
+      INPROGRESS: Issue[];
+      DONE: Issue[];
+      CANCELLED: Issue[];
+    }
+    workspaceId: string;
+  }) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  pusherServer.trigger(workspaceId, "issue-dragged-and-dropped", issues);
 };
 
 export const deleteIssue = async ({
@@ -146,10 +179,19 @@ export const deleteIssue = async ({
     issue.ownerId === session.user.id ||
     issue.assignedTo.includes(session.user.id!)
   ) {
-    await db.issue.delete({
+    const deletedIssue = await db.issue.delete({
       where: {
         id,
       },
+      select: {
+        status: true,
+        id: true,
+      },
+    });
+
+    pusherServer.trigger(workspaceId, "issue-deleted", {
+      id: deletedIssue.id,
+      status: deletedIssue.status,
     });
 
     revalidatePath(`/dashboard/${workspaceId}`);
