@@ -154,7 +154,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
       pusherClient.unbind("issue-dragged-and-dropped", dragAndDropIssueHandler);
       pusherClient.unsubscribe(params.workspaceId as string);
     };
-  }, [issues, params.workspaceId]);
+  }, [params.workspaceId]);
 
   const handleStatusSelect = async (id: string, status: ISSUETYPE) => {
     try {
