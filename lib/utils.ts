@@ -38,14 +38,20 @@ export function timeAgo(date: Date) {
   return "just now";
 }
 
-export const getProjectCompletePercentage = (starDate: Date, endDate: Date) => {
+export const getProjectCompletePercentage = (startDate: Date, endDate: Date) => {
+  if(!startDate || !endDate) return 0;
+
   const now = new Date();
-  if (now.getTime() < starDate.getTime()) {
+  if (now < startDate) {
     return 0;
-  } else if (now.getTime() > endDate.getTime()) {
+  } else if (now > endDate) {
     return 100;
   }
-  const total = endDate.getTime() - starDate.getTime();
-  const current = now.getTime() - starDate.getTime();
-  return Math.floor((current / total) * 100);
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const total = end.getTime() - start.getTime();
+  const passed = now.getTime() - start.getTime();
+
+  return Math.floor((passed / total) * 100);
 };

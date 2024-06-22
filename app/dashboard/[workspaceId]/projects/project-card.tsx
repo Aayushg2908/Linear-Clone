@@ -1,6 +1,6 @@
 "use client";
 
-import { addMember, deleteProject, updateProject } from "@/actions/project";
+import { addMember, deleteProject, realtimeUpdateProject, updateProject } from "@/actions/project";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +39,7 @@ import {
 import { ProjectLabel, Projects } from "@/constants";
 import { useCreateProject } from "@/hooks/use-create-project";
 import { useRenameProject } from "@/hooks/use-rename-project";
+import { pusherClient } from "@/lib/pusher";
 import { cn, getProjectCompletePercentage } from "@/lib/utils";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { PROJECTLABEL, PROJECTTYPE, Project, User } from "@prisma/client";
@@ -59,26 +60,111 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+interface ProjectProps {
+  BACKLOG: Project[];
+  PLANNED: Project[];
+  INPROGRESS: Project[];
+  COMPLETED: Project[];
+  CANCELLED: Project[];
+}
+
 interface ProjectCardProps {
-  projects: {
-    BACKLOG: Project[];
-    PLANNED: Project[];
-    INPROGRESS: Project[];
-    COMPLETED: Project[];
-    CANCELLED: Project[];
-  };
+  projects: ProjectProps;
   members: User[];
 }
 
 const ProjectCard = ({ projects, members }: ProjectCardProps) => {
+  const [allProjects, setAllProjects] = useState<ProjectProps>(projects);
   const { onOpen } = useCreateProject();
   const params = useParams();
   const { onOpen: onRenameOpen } = useRenameProject();
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("");
+
+  useEffect(() => {
+    pusherClient.subscribe(params.workspaceId as string);
+
+    const createProjectHandler = (project: Project) => {
+      setAllProjects((prev) => {
+        return {
+          ...prev,
+          [project.status]: [...prev[project.status], project],
+        };
+      });
+    };
+
+    const updateProjectHandler = ({
+      updatedProject,
+      status,
+      prevStatus,
+      newStatus,
+    }: {
+        updatedProject: Project;
+        status: boolean;
+        prevStatus: PROJECTTYPE;
+        newStatus: PROJECTTYPE;
+      }) => {
+      if(!status) {
+        setAllProjects((prev) => {
+          return {
+            ...prev,
+            [updatedProject.status]: prev[updatedProject.status].map((iss) =>
+              iss.id === updatedProject.id ? updatedProject : iss
+            ),
+          };
+        });
+      } else if(status) {
+        setAllProjects((prev) => {
+          return {
+            ...prev,
+            [prevStatus]: prev[prevStatus].filter(
+              (iss) => iss.id !== updatedProject.id
+            ),
+            [newStatus]: [
+              ...prev[newStatus].slice(0, updatedProject.order),
+              updatedProject,
+              ...prev[newStatus].slice(updatedProject.order),
+            ],
+          };
+        });
+      }
+    };
+
+    const deleteProjectHandler = ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: PROJECTTYPE;
+    }) => {
+      setAllProjects((prev) => {
+        return {
+          ...prev,
+          [status]: prev[status].filter((iss) => iss.id !== id),
+        };
+      });
+    };
+
+    const dragAndDropProjectHandler = (projects: ProjectProps) => {
+      setAllProjects(projects);
+    };
+
+    pusherClient.bind("project-created", createProjectHandler);
+    pusherClient.bind("project-updated", updateProjectHandler);
+    pusherClient.bind("project-deleted", deleteProjectHandler);
+    pusherClient.bind("project-dragged-and-dropped", dragAndDropProjectHandler);
+
+    return () => {
+      pusherClient.unbind("project-created", createProjectHandler);
+      pusherClient.unbind("project-updated", updateProjectHandler);
+      pusherClient.unbind("project-deleted", deleteProjectHandler);
+      pusherClient.unbind("project-dragged-and-dropped", dragAndDropProjectHandler);
+      pusherClient.unsubscribe(params.workspaceId as string);
+    };
+  }, [params.workspaceId]);
 
   const handleStatusSelect = async (id: string, status: PROJECTTYPE) => {
     try {
@@ -273,12 +359,12 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
     if (source.droppableId === destination.droppableId) {
       try {
         toast.loading("Reordering project...");
-        const projectsList = [...projects[source.droppableId as PROJECTTYPE]];
+        const projectsList = [...allProjects[source.droppableId as PROJECTTYPE]];
         const [removed] = projectsList.splice(source.index, 1);
         projectsList.splice(destination.index, 0, removed);
 
         const updatedProjects = {
-          ...projects,
+          ...allProjects,
           [source.droppableId]: projectsList,
         };
 
@@ -288,7 +374,7 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
           }
         );
 
-        projects[source.droppableId as PROJECTTYPE] =
+        allProjects[source.droppableId as PROJECTTYPE] =
           updatedProjects[source.droppableId as PROJECTTYPE];
 
         for (const project of updatedProjects[
@@ -306,7 +392,12 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
           }
         }
 
-        toast.success("Issue reordered successfully.");
+        await realtimeUpdateProject({
+          projects: allProjects,
+          workspaceId: params.workspaceId as string,
+        });
+
+        toast.success("Project reordered successfully.");
       } catch (error) {
         toast.error("Something went wrong! Please try again.");
       } finally {
@@ -317,17 +408,17 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
       try {
         toast.loading("Moving project...");
         const sourceProjectsList = [
-          ...projects[source.droppableId as PROJECTTYPE],
+          ...allProjects[source.droppableId as PROJECTTYPE],
         ];
         const destinationProjectsList = [
-          ...projects[destination.droppableId as PROJECTTYPE],
+          ...allProjects[destination.droppableId as PROJECTTYPE],
         ];
 
         const [removed] = sourceProjectsList.splice(source.index, 1);
         destinationProjectsList.splice(destination.index, 0, removed);
 
         const updatedProjects = {
-          ...projects,
+          ...allProjects,
           [source.droppableId]: sourceProjectsList,
           [destination.droppableId]: destinationProjectsList,
         };
@@ -343,9 +434,9 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
           }
         );
 
-        projects[source.droppableId as PROJECTTYPE] =
+        allProjects[source.droppableId as PROJECTTYPE] =
           updatedProjects[source.droppableId as PROJECTTYPE];
-        projects[destination.droppableId as PROJECTTYPE] =
+        allProjects[destination.droppableId as PROJECTTYPE] =
           updatedProjects[destination.droppableId as PROJECTTYPE];
 
         for (const project of updatedProjects[
@@ -379,7 +470,12 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
           }
         }
 
-        toast.success("Issue reordered successfully.");
+        await realtimeUpdateProject({
+          projects: allProjects,
+          workspaceId: params.workspaceId as string,
+        });
+
+        toast.success("Project reordered successfully.");
       } catch (error) {
         toast.error("Something went wrong! Please try again.");
       } finally {
@@ -410,7 +506,7 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                   />
                   <span className="font-bold">{project.name}</span>
                   <span className="text-muted-foreground">
-                    {projects[project.type].length}
+                    {allProjects[project.type].length}
                   </span>
                 </span>
                 <Button
@@ -428,7 +524,7 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                     {...provided.droppableProps}
                     className="w-full flex flex-col gap-y-1 p-2"
                   >
-                    {projects[project.type].map((pro, index) => (
+                    {allProjects[project.type].map((pro, index) => (
                       <Draggable key={index} index={index} draggableId={pro.id}>
                         {(provided) => (
                           <ContextMenu>
@@ -747,10 +843,6 @@ const ProjectCard = ({ projects, members }: ProjectCardProps) => {
                                 </ContextMenuSubTrigger>
                                 <ContextMenuSubContent>
                                   <Calendar
-                                    disabled={(date: Date) =>
-                                      date <= new Date() ||
-                                      date < new Date("1900-01-01")
-                                    }
                                     mode="single"
                                     className="rounded-md"
                                     onSelect={(date: Date | undefined) =>

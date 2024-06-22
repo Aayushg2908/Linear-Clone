@@ -2,7 +2,8 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { PROJECTLABEL, PROJECTTYPE } from "@prisma/client";
+import { pusherServer } from "@/lib/pusher";
+import { PROJECTLABEL, PROJECTTYPE, Project } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
@@ -35,7 +36,7 @@ export const createProject = async ({
   });
   const newOrder = lastProject ? lastProject.order + 1 : 0;
 
-  await db.project.create({
+  const createdProject = await db.project.create({
     data: {
       title,
       content,
@@ -46,6 +47,8 @@ export const createProject = async ({
       order: newOrder,
     },
   });
+
+  pusherServer.trigger(workspaceId, "project-created", createdProject);
 
   revalidatePath(`/dashboard/${workspaceId}/projects`);
 };
@@ -109,7 +112,7 @@ export const updateProject = async ({
     project.lead === session.user.id ||
     project.members.includes(session.user.id!)
   ) {
-    await db.project.update({
+    const updatedProject = await db.project.update({
       where: {
         id,
         workspaceId,
@@ -119,6 +122,15 @@ export const updateProject = async ({
       },
     });
 
+    if(!values.order) {
+      pusherServer.trigger(workspaceId, "project-updated", {
+        updatedProject,
+        status: values.status ? true: false,
+        prevStatus: project.status,
+        newStatus: values.status,
+      });
+    }
+
     revalidatePath(`/dashboard/${workspaceId}/projects`);
     revalidatePath(`/dashboard/${workspaceId}/projects/${id}`);
 
@@ -126,6 +138,27 @@ export const updateProject = async ({
   }
 
   return { error: "You do not have the permission to do this action!" };
+};
+
+export const realtimeUpdateProject = async ({
+  projects,
+  workspaceId,
+}: {
+    projects: {
+      BACKLOG: Project[];
+      PLANNED: Project[];
+      INPROGRESS: Project[];
+      COMPLETED: Project[];
+      CANCELLED: Project[];
+    }
+    workspaceId: string;
+  }) => {
+  const session = await auth();
+  if (!session?.user && !session?.user?.id) {
+    return redirect("/sign-in");
+  }
+
+  pusherServer.trigger(workspaceId, "project-dragged-and-dropped", projects);
 };
 
 export const deleteProject = async ({
@@ -155,6 +188,11 @@ export const deleteProject = async ({
       where: {
         id,
       },
+    });
+
+    pusherServer.trigger(workspaceId, "project-deleted", {
+      id,
+      status: project.status,
     });
 
     revalidatePath(`/dashboard/${workspaceId}/projects`);
