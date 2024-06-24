@@ -7,6 +7,8 @@ import ProjectSidebar from "./project-sidebar";
 import { SheetMenu } from "../../sheet-menu";
 import ProjectSidebarMenu from "./project-sidebar-menu";
 import CreateMilestoneButton from "./create-milestone-button";
+import { getMilestones } from "@/actions/milestone";
+import MilestonesList from "./milestones-list";
 
 const ProjectPage = async ({
   params,
@@ -17,6 +19,7 @@ const ProjectPage = async ({
 
   const project = await getProjectById({ workspaceId, projectId });
   const workspace = await getWorkspace({ workspaceId });
+  const milestones = await getMilestones(projectId);
 
   return (
     <div className="w-full h-full flex">
@@ -45,6 +48,7 @@ const ProjectPage = async ({
           <MainContent project={project} workspaceId={workspaceId} />
           <div className="w-full h-[1px] bg-slate-600 mt-10" />
           <CreateMilestoneButton projectId={project.id} />
+          <MilestonesList milestones={milestones} />
         </ScrollArea>
       </div>
       <ProjectSidebar

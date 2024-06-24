@@ -44,7 +44,7 @@ const SettingsForm = ({
     if (workspace.name) {
       form.setValue("name", workspace.name);
     }
-  }, [workspace]);
+  }, [workspace, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {

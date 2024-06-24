@@ -15,7 +15,7 @@ import {
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useProjectMilestone } from "@/hooks/use-project-milestone";
-import { createMilestone } from "@/actions/milestone";
+import { createMilestone, updateMilestone } from "@/actions/milestone";
 import { Textarea } from "./ui/textarea";
 
 const formSchema = z.object({
@@ -28,7 +28,7 @@ const formSchema = z.object({
 });
 
 const ProjectMilestoneModal = () => {
-  const {type, projectId, name, description, isOpen, onClose} = useProjectMilestone();
+  const {type, projectId, milestoneId, name, description, isOpen, onClose} = useProjectMilestone();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -49,15 +49,28 @@ const ProjectMilestoneModal = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true);
-      const response = await createMilestone({
-        projectId,
-        name: values.name,
-        description: values.description,
-      })
-      if(response.error) {
-        toast.error(response.error);
-      } else if(response.success) {
-        toast.success("Milestone created successfully!");
+      if(type === "CREATE") {
+        const response = await createMilestone({
+          projectId,
+          name: values.name,
+          description: values.description,
+        })
+        if(response.error) {
+          toast.error(response.error);
+        } else if(response.success) {
+          toast.success("Milestone created successfully!");
+        }
+      } else {
+        const response = await updateMilestone({
+          id: milestoneId,
+          name: values.name,
+          description: values.description,
+        });
+        if(response.error) {
+          toast.error(response.error);
+        } else if(response.success) {
+          toast.success("Milestone updated successfully!");
+        }
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
