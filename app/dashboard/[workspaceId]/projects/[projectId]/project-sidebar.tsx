@@ -480,7 +480,7 @@ const ProjectSidebar = ({
         <AlertDialogTrigger asChild>
           <Button className="w-fit bg-red-600 hover:bg-red-700 text-white">
             <Trash2 className="size-5 mr-1" />
-            Delete Issue
+            Delete Project
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>

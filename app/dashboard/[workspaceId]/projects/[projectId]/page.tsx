@@ -6,6 +6,7 @@ import MainContent from "./main-content";
 import ProjectSidebar from "./project-sidebar";
 import { SheetMenu } from "../../sheet-menu";
 import ProjectSidebarMenu from "./project-sidebar-menu";
+import CreateMilestoneButton from "./create-milestone-button";
 
 const ProjectPage = async ({
   params,
@@ -42,6 +43,8 @@ const ProjectPage = async ({
         </nav>
         <ScrollArea className="w-full h-full p-4">
           <MainContent project={project} workspaceId={workspaceId} />
+          <div className="w-full h-[1px] bg-slate-600 mt-10" />
+          <CreateMilestoneButton projectId={project.id} />
         </ScrollArea>
       </div>
       <ProjectSidebar

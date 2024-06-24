@@ -5,6 +5,7 @@ import CreateIssueModal from "../CreateIssueModal";
 import RenameIssueModal from "../RenameIssueModal";
 import CreateProjectModal from "../CreateProjectModal";
 import RenameProjectModal from "../RenameProjectModal";
+import ProjectMilestoneModal from "../ProjectMilestoneModal";
 
 const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -23,6 +24,7 @@ const ModalProvider = () => {
       <RenameIssueModal />
       <CreateProjectModal />
       <RenameProjectModal />
+      <ProjectMilestoneModal />
     </>
   );
 };
