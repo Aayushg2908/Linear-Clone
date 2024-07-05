@@ -96,6 +96,9 @@ model Issue {
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -152,8 +155,9 @@ model Project {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  members String[]
+  members    String[]
   milestones Milestone[]
+  issues     Issue[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
