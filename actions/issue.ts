@@ -83,6 +83,7 @@ export const updateIssue = async ({
     status?: ISSUETYPE;
     order?: number;
     label?: ISSUELABEL | null;
+    projectId?: string | null;
   };
 }) => {
   const session = await auth();
@@ -114,7 +115,7 @@ export const updateIssue = async ({
       },
     });
 
-    if(!values.order) {
+    if (!values.order) {
       pusherServer.trigger(workspaceId, "issue-updated", {
         updatedIssue: updatedIssue,
         status: values.status ? true : false,
@@ -136,15 +137,15 @@ export const realtimeUpdateIssue = async ({
   issues,
   workspaceId,
 }: {
-    issues: {
-      BACKLOG: Issue[];
-      TODO: Issue[];
-      INPROGRESS: Issue[];
-      DONE: Issue[];
-      CANCELLED: Issue[];
-    }
-    workspaceId: string;
-  }) => {
+  issues: {
+    BACKLOG: Issue[];
+    TODO: Issue[];
+    INPROGRESS: Issue[];
+    DONE: Issue[];
+    CANCELLED: Issue[];
+  };
+  workspaceId: string;
+}) => {
   const session = await auth();
   if (!session?.user && !session?.user?.id) {
     return redirect("/sign-in");

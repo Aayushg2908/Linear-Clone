@@ -1,6 +1,11 @@
 "use client";
 
-import { assignIssue, deleteIssue, realtimeUpdateIssue, updateIssue } from "@/actions/issue";
+import {
+  assignIssue,
+  deleteIssue,
+  realtimeUpdateIssue,
+  updateIssue,
+} from "@/actions/issue";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,11 +34,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IssueLabel, Issues } from "@/constants";
+import { IssueLabel, Issues, Projects } from "@/constants";
 import { useCreateIssue } from "@/hooks/use-create-issue";
 import { useRenameIssue } from "@/hooks/use-rename-issue";
 import { cn } from "@/lib/utils";
-import { ISSUELABEL, ISSUETYPE, Issue, User } from "@prisma/client";
+import { ISSUELABEL, ISSUETYPE, Issue, Project, User } from "@prisma/client";
 import {
   CheckIcon,
   CirclePlay,
@@ -64,9 +69,10 @@ interface IssueProps {
 interface IssueCardProps {
   issues: IssueProps;
   members: User[];
+  projects: Project[];
 }
 
-export const IssueCard = ({ issues, members }: IssueCardProps) => {
+export const IssueCard = ({ issues, members, projects }: IssueCardProps) => {
   const [allIssues, setAllIssues] = useState<IssueProps>(issues);
   const { onOpen } = useCreateIssue();
   const { onOpen: onRenameOpen } = useRenameIssue();
@@ -92,26 +98,26 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
       prevStatus,
       newStatus,
     }: {
-        updatedIssue: Issue;
-        status: boolean;
-        prevStatus: ISSUETYPE;
-        newStatus: ISSUETYPE;
-      }) => {
-      if(!status) {
+      updatedIssue: Issue;
+      status: boolean;
+      prevStatus: ISSUETYPE;
+      newStatus: ISSUETYPE;
+    }) => {
+      if (!status) {
         setAllIssues((prev) => {
           return {
             ...prev,
             [updatedIssue.status]: prev[updatedIssue.status].map((iss) =>
-              iss.id === updatedIssue.id ? updatedIssue : iss
+              iss.id === updatedIssue.id ? updatedIssue : iss,
             ),
           };
         });
-      } else if(status) {
+      } else if (status) {
         setAllIssues((prev) => {
           return {
             ...prev,
             [prevStatus]: prev[prevStatus].filter(
-              (iss) => iss.id !== updatedIssue.id
+              (iss) => iss.id !== updatedIssue.id,
             ),
             [newStatus]: [
               ...prev[newStatus].slice(0, updatedIssue.order),
@@ -232,7 +238,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
   }) => {
     try {
       toast.loading(
-        `${type === "ASSIGN" ? "Assigning" : "Unassigning"} issue...`
+        `${type === "ASSIGN" ? "Assigning" : "Unassigning"} issue...`,
       );
       const response = await assignIssue({
         userId,
@@ -248,6 +254,28 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
         } else if (type === "REMOVE") {
           toast.success(`Issue unassigned from ${name} successfully.`);
         }
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  const handleProjectAssign = async (id: string, projectId: string | null) => {
+    try {
+      toast.loading("Adding project to this issue...");
+      const response = await updateIssue({
+        id,
+        workspaceId: params.workspaceId as string,
+        values: {
+          projectId,
+        },
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success("Project added to this issue successfully.");
       }
     } catch (error) {
       toast.error("Something went wrong! Please try again.");
@@ -285,10 +313,11 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
         updatedIssues[source.droppableId as ISSUETYPE].forEach(
           (issue, index) => {
             issue.order = index;
-          }
+          },
         );
 
-        allIssues[source.droppableId as ISSUETYPE] = updatedIssues[source.droppableId as ISSUETYPE];
+        allIssues[source.droppableId as ISSUETYPE] =
+          updatedIssues[source.droppableId as ISSUETYPE];
 
         for (const issue of updatedIssues[source.droppableId as ISSUETYPE]) {
           const response = await updateIssue({
@@ -306,7 +335,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
         await realtimeUpdateIssue({
           issues: allIssues,
           workspaceId: params.workspaceId as string,
-        })
+        });
 
         toast.success("Issue reordered successfully.");
       } catch (error) {
@@ -337,16 +366,18 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
         updatedIssues[source.droppableId as ISSUETYPE].forEach(
           (issue, index) => {
             issue.order = index;
-          }
+          },
         );
         updatedIssues[destination.droppableId as ISSUETYPE].forEach(
           (issue, index) => {
             issue.order = index;
-          }
+          },
         );
 
-        allIssues[source.droppableId as ISSUETYPE] = updatedIssues[source.droppableId as ISSUETYPE];
-        allIssues[destination.droppableId as ISSUETYPE] = updatedIssues[destination.droppableId as ISSUETYPE];
+        allIssues[source.droppableId as ISSUETYPE] =
+          updatedIssues[source.droppableId as ISSUETYPE];
+        allIssues[destination.droppableId as ISSUETYPE] =
+          updatedIssues[destination.droppableId as ISSUETYPE];
 
         for (const issue of updatedIssues[source.droppableId as ISSUETYPE]) {
           const response = await updateIssue({
@@ -380,7 +411,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
         await realtimeUpdateIssue({
           issues: allIssues,
           workspaceId: params.workspaceId as string,
-        })
+        });
 
         toast.success("Issue reordered successfully.");
       } catch (error) {
@@ -408,7 +439,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                       "size-5 text-white rounded-full",
                       issue.type === "DONE" && "bg-green-600 ",
                       issue.type === "INPROGRESS" && "bg-yellow-600",
-                      issue.type === "CANCELLED" && "bg-red-600"
+                      issue.type === "CANCELLED" && "bg-red-600",
                     )}
                   />
                   <span className="font-bold">{issue.name}</span>
@@ -453,7 +484,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                                             issue.type === "INPROGRESS" &&
                                               "bg-yellow-600",
                                             issue.type === "CANCELLED" &&
-                                              "bg-red-600"
+                                              "bg-red-600",
                                           )}
                                         />
                                       </DropdownMenuTrigger>
@@ -465,7 +496,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                                             onSelect={() =>
                                               handleStatusSelect(
                                                 iss.id,
-                                                issue.type
+                                                issue.type,
                                               )
                                             }
                                           >
@@ -478,7 +509,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                                                   issue.type === "INPROGRESS" &&
                                                     "bg-yellow-600",
                                                   issue.type === "CANCELLED" &&
-                                                    "bg-red-600"
+                                                    "bg-red-600",
                                                 )}
                                               />
                                               {issue.name}
@@ -512,7 +543,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                                               iss.label === "FEATURE" &&
                                                 "bg-purple-600",
                                               iss.label === "IMPROVEMENT" &&
-                                                "bg-blue-600"
+                                                "bg-blue-600",
                                             )}
                                           />
                                           {iss.label}
@@ -527,7 +558,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                                               if (iss.label !== label.type) {
                                                 handleLabelSelect(
                                                   iss.id,
-                                                  label.type
+                                                  label.type,
                                                 );
                                               } else {
                                                 handleLabelSelect(iss.id, null);
@@ -578,7 +609,7 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                                             issue.type === "INPROGRESS" &&
                                               "bg-yellow-600",
                                             issue.type === "CANCELLED" &&
-                                              "bg-red-600"
+                                              "bg-red-600",
                                           )}
                                         />
                                         {issue.name}
@@ -667,12 +698,60 @@ export const IssueCard = ({ issues, members }: IssueCardProps) => {
                                   ))}
                                 </ContextMenuSubContent>
                               </ContextMenuSub>
+                              <ContextMenuSub>
+                                <ContextMenuSubTrigger className="cursor-pointer">
+                                  <UserCircle className="size-4 mr-1" />
+                                  Project
+                                </ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                  {projects.map((project) => (
+                                    <ContextMenuItem
+                                      key={project.id}
+                                      className="cursor-pointer flex items-center gap-x-1"
+                                      onSelect={() => {
+                                        if (iss.projectId === project.id) {
+                                          handleProjectAssign(iss.id, null);
+                                        } else {
+                                          handleProjectAssign(
+                                            iss.id,
+                                            project.id,
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      {Projects.map((pro) => (
+                                        <>
+                                          {project.status === pro.type && (
+                                            <pro.Icon
+                                              className={cn(
+                                                "size-5 text-white rounded-sm",
+                                                pro.type === "COMPLETED" &&
+                                                  "bg-green-600 ",
+                                                pro.type === "INPROGRESS" &&
+                                                  "bg-yellow-600",
+                                                pro.type === "CANCELLED" &&
+                                                  "bg-red-600",
+                                              )}
+                                            />
+                                          )}
+                                        </>
+                                      ))}
+                                      <span className="text-sm">
+                                        {project.title}
+                                      </span>
+                                      {iss.projectId === project.id && (
+                                        <CheckIcon className="size-4 text-green-600" />
+                                      )}
+                                    </ContextMenuItem>
+                                  ))}
+                                </ContextMenuSubContent>
+                              </ContextMenuSub>
                               <ContextMenuItem
                                 onSelect={() =>
                                   onRenameOpen(
                                     iss.id,
                                     params.workspaceId as string,
-                                    iss.title
+                                    iss.title,
                                   )
                                 }
                                 className="cursor-pointer"

@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueCard } from "./issue-card";
 import { getAllIssues } from "@/actions/issue";
 import { getWorkspace } from "@/actions/workspace";
+import { getAllProjects } from "@/actions/project";
 
 const WorkspacePage = async ({
   params,
@@ -13,15 +14,16 @@ const WorkspacePage = async ({
 
   const issues = await getAllIssues({ workspaceId });
   const workspace = await getWorkspace({ workspaceId });
+  const projects = await getAllProjects({ workspaceId });
 
   const backlogIssues = issues.filter((issue) => issue.status === "BACKLOG");
   const todoIssues = issues.filter((issue) => issue.status === "TODO");
   const inProgressIssues = issues.filter(
-    (issue) => issue.status === "INPROGRESS"
+    (issue) => issue.status === "INPROGRESS",
   );
   const doneIssues = issues.filter((issue) => issue.status === "DONE");
   const cancelledIssues = issues.filter(
-    (issue) => issue.status === "CANCELLED"
+    (issue) => issue.status === "CANCELLED",
   );
 
   const finalIssues = {
@@ -41,7 +43,11 @@ const WorkspacePage = async ({
         </div>
       </nav>
       <ScrollArea className="w-full h-full">
-        <IssueCard issues={finalIssues} members={workspace.members} />
+        <IssueCard
+          issues={finalIssues}
+          members={workspace.members}
+          projects={projects}
+        />
       </ScrollArea>
     </div>
   );

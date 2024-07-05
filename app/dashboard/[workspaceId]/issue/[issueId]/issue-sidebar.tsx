@@ -13,24 +13,27 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IssueLabel, Issues } from "@/constants";
+import { IssueLabel, Issues, Projects } from "@/constants";
 import { cn } from "@/lib/utils";
-import { ISSUELABEL, ISSUETYPE, Issue, User } from "@prisma/client";
+import { ISSUELABEL, ISSUETYPE, Issue, Project, User } from "@prisma/client";
 import {
   CheckIcon,
+  ChevronRight,
   CircleUserRound,
+  LayoutGrid,
   PlusIcon,
   Trash2,
   UserCircleIcon,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -55,10 +58,14 @@ const IssueSidebar = ({
   issue,
   workspaceId,
   members,
+  mobile = false,
+  projects,
 }: {
   issue: Issue;
   workspaceId: string;
   members: User[];
+  mobile?: boolean;
+  projects: Project[];
 }) => {
   const Icon = Issues[getIconIndex(issue.status)].Icon;
   const router = useRouter();
@@ -140,7 +147,7 @@ const IssueSidebar = ({
   }) => {
     try {
       toast.loading(
-        `${type === "ASSIGN" ? "Assigning" : "Unassigning"} issue...`
+        `${type === "ASSIGN" ? "Assigning" : "Unassigning"} issue...`,
       );
       const response = await assignIssue({
         userId,
@@ -164,8 +171,36 @@ const IssueSidebar = ({
     }
   };
 
+  const handleProjectAssign = async (id: string, projectId: string | null) => {
+    try {
+      toast.loading("Adding project to this issue...");
+      const response = await updateIssue({
+        id,
+        workspaceId,
+        values: {
+          projectId,
+        },
+      });
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.success) {
+        toast.success("Project added to this issue successfully.");
+      }
+    } catch (error) {
+      toast.error("Something went wrong! Please try again.");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
   return (
-    <aside className="max-md:hidden fixed top-0 right-0 z-50 w-[250px] h-full border-l border-l-slate-600 flex flex-col py-2 px-4 gap-y-8">
+    <aside
+      className={cn(
+        "w-[250px] h-full flex flex-col gap-y-8",
+        !mobile &&
+          "max-md:hidden fixed top-0 right-0 z-50 border-l border-l-slate-600 py-2 px-4",
+      )}
+    >
       <h1 className="w-full text-center text-xl font-bold">Properties</h1>
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-x-2 w-fit">
@@ -174,7 +209,7 @@ const IssueSidebar = ({
               "size-4 text-white rounded-full",
               issue.status === "DONE" && "bg-green-600 ",
               issue.status === "INPROGRESS" && "bg-yellow-600",
-              issue.status === "CANCELLED" && "bg-red-600"
+              issue.status === "CANCELLED" && "bg-red-600",
             )}
           />
           <span>{issue.status}</span>
@@ -192,7 +227,7 @@ const IssueSidebar = ({
                     "size-4 text-white rounded-full",
                     iss.type === "DONE" && "bg-green-600 ",
                     iss.type === "INPROGRESS" && "bg-yellow-600",
-                    iss.type === "CANCELLED" && "bg-red-600"
+                    iss.type === "CANCELLED" && "bg-red-600",
                   )}
                 />
                 {iss.name}
@@ -216,7 +251,7 @@ const IssueSidebar = ({
                   "size-4 rounded-full",
                   issue.label === "BUG" && "bg-red-600",
                   issue.label === "FEATURE" && "bg-purple-600",
-                  issue.label === "IMPROVEMENT" && "bg-blue-600"
+                  issue.label === "IMPROVEMENT" && "bg-blue-600",
                 )}
               />
             ) : (
@@ -294,6 +329,89 @@ const IssueSidebar = ({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+      <div className="flex items-center gap-x-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-x-2 w-fit">
+            {issue.projectId ? (
+              <>
+                {projects.map((project) => (
+                  <>
+                    {issue.projectId === project.id && (
+                      <div className="flex items-center gap-x-2">
+                        {Projects.map((pro) => (
+                          <>
+                            {project.status === pro.type && (
+                              <pro.Icon
+                                className={cn(
+                                  "size-5 text-white rounded-sm",
+                                  pro.type === "COMPLETED" && "bg-green-600 ",
+                                  pro.type === "INPROGRESS" && "bg-yellow-600",
+                                  pro.type === "CANCELLED" && "bg-red-600",
+                                )}
+                              />
+                            )}
+                          </>
+                        ))}
+                        <span className="text-sm">{project.title}</span>
+                      </div>
+                    )}
+                  </>
+                ))}
+              </>
+            ) : (
+              <>
+                <LayoutGrid className="size-5" />
+                Project
+              </>
+            )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {projects.map((project) => (
+              <DropdownMenuItem
+                key={project.id}
+                className="cursor-pointer flex items-center gap-x-1"
+                onSelect={() => {
+                  if (issue.projectId !== project.id) {
+                    handleProjectAssign(issue.id, project.id);
+                  } else {
+                    handleProjectAssign(issue.id, null);
+                  }
+                }}
+              >
+                {Projects.map((pro) => (
+                  <>
+                    {project.status === pro.type && (
+                      <pro.Icon
+                        className={cn(
+                          "size-5 text-white rounded-sm",
+                          pro.type === "COMPLETED" && "bg-green-600 ",
+                          pro.type === "INPROGRESS" && "bg-yellow-600",
+                          pro.type === "CANCELLED" && "bg-red-600",
+                        )}
+                      />
+                    )}
+                  </>
+                ))}
+                <span className="text-sm">{project.title}</span>
+                {issue.projectId === project.id && (
+                  <CheckIcon className="size-4 text-green-600" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Link
+          href={`/dashboard/${workspaceId}/projects/${issue.projectId}`}
+          className={cn(
+            buttonVariants({
+              size: "icon",
+              variant: "ghost",
+            }),
+          )}
+        >
+          <ChevronRight className="size-5" />
+        </Link>
+      </div>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button className="w-fit bg-red-600 hover:bg-red-700 text-white">

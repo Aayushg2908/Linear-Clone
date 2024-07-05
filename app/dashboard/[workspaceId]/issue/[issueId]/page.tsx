@@ -9,6 +9,7 @@ import AddCommentForm from "./add-comment-form";
 import { getAllComments } from "@/actions/comment";
 import CommentsList from "./comments-list";
 import { getWorkspace } from "@/actions/workspace";
+import { getAllProjects } from "@/actions/project";
 
 const IssuePage = async ({
   params,
@@ -20,6 +21,7 @@ const IssuePage = async ({
   const issue = await getIssueById({ workspaceId, issueId });
   const comments = await getAllComments({ issueId });
   const workspace = await getWorkspace({ workspaceId });
+  const projects = await getAllProjects({ workspaceId });
 
   return (
     <div className="w-full h-full flex">
@@ -40,6 +42,7 @@ const IssuePage = async ({
               issue={issue}
               workspaceId={workspaceId}
               members={workspace.members}
+              projects={projects}
             />
           </div>
         </nav>
@@ -55,6 +58,7 @@ const IssuePage = async ({
         issue={issue}
         workspaceId={workspaceId}
         members={workspace.members}
+        projects={projects}
       />
     </div>
   );
