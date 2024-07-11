@@ -80,3 +80,7 @@ body,
     @apply bg-background text-foreground;
   }
 }
+
+.noscrollbar::-webkit-scrollbar {
+  display: none;
+}

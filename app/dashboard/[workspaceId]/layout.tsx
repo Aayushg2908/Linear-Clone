@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { Sidebar } from "./sidebar";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
+import AIChatBubble from "./ai-chat-bubble";
 
 const WorkspaceLayout = async ({
   children,
@@ -36,7 +37,12 @@ const WorkspaceLayout = async ({
       <div className="max-md:hidden">
         <Sidebar workspaceId={params.workspaceId} />
       </div>
-      <main className="w-full h-full md:ml-[220px]">{children}</main>
+      <main className="w-full h-full md:ml-[220px] relative">
+        {children}
+        <div className="absolute bottom-4 right-4">
+          <AIChatBubble workspaceId={params.workspaceId} />
+        </div>
+      </main>
     </div>
   );
 };
